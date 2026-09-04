@@ -8,15 +8,20 @@ client = genai.Client(api_key=api_key)
 
 
 class BaseAgent:
-    """हर एजेंट का बुनियादी ढांचा, बाकी एजेंट्स इसी से बनेंगे"""
-    
+    """Base template for all agents. Every agent inherits from this."""
+
     def __init__(self, name: str, role: str):
         self.name = name
-        self.role = role  # ये एजेंट का काम क्या है, ये बताता है (system instruction जैसा)
-    
+        self.role = role  # This defines the agent's job/personality
+
     def run(self, prompt: str) -> str:
-        """ये फंक्शन एजेंट को असली सवाल भेजता है और जवाब लाता है"""
-        full_prompt = f"{self.role}\n\nTask: {prompt}"
+        """Sends a prompt to the model and returns the response."""
+        full_prompt = (
+            f"{self.role}\n\n"
+            f"IMPORTANT: Always reply in the SAME language the user used "
+            f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
+            f"Task: {prompt}"
+        )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
             contents=full_prompt,
@@ -44,35 +49,60 @@ class ReviewerAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="Reviewer",
-            role="You are an editor. Review the given paragraph for accuracy, clarity, and flow. Give ONLY the improved final version, no extra comments."
+            role="You are an editor. Review the given paragraph for accuracy, clarity, and flow."
         )
 
 
 class Coordinator:
-    """ये सभी एजेंट्स को सही क्रम में चलाता है"""
-    
+    """Runs all agents in the correct order, with self-correction if needed."""
+
     def __init__(self):
         self.researcher = ResearcherAgent()
         self.writer = WriterAgent()
         self.reviewer = ReviewerAgent()
-    
-    def run(self, topic: str):
-        print(f"\n🔍 {self.researcher.name} काम कर रहा है...")
+
+    def run(self, topic: str, max_attempts: int = 2):
+        print(f"\n🔍 {self.researcher.name} is working...")
         research = self.researcher.run(f"Topic: {topic}")
-        print(f"Research मिली:\n{research}\n")
+        print(f"Research found:\n{research}\n")
 
-        print(f"✍️ {self.writer.name} काम कर रहा है...")
-        draft = self.writer.run(f"Topic: {topic}\nFacts:\n{research}")
-        print(f"Draft मिला:\n{draft}\n")
+        draft = None
+        feedback = ""
+        for attempt in range(1, max_attempts + 1):
+            print(f"✍️ {self.writer.name} is working... (attempt {attempt})")
 
-        print(f"🔎 {self.reviewer.name} काम कर रहा है...")
-        final_output = self.reviewer.run(f"Topic: {topic}\nDraft:\n{draft}")
-        print(f"\n📝 Final Result:\n{final_output}")
-        
-        return final_output
+            if attempt == 1:
+                draft = self.writer.run(f"Topic: {topic}\nFacts:\n{research}")
+            else:
+                draft = self.writer.run(
+                    f"Topic: {topic}\nFacts:\n{research}\n\n"
+                    f"Previous attempt was rejected for this reason: {feedback}\n"
+                    f"Write a better version."
+                )
+            print(f"Draft:\n{draft}\n")
+
+            print(f"🔎 {self.reviewer.name} is checking...")
+            check = self.reviewer.run(
+                f"Topic: {topic}\nDraft:\n{draft}\n\n"
+                f"Reply with EXACTLY ONE WORD/LINE and nothing else. "
+                f"If this is accurate, clear and well written, reply only: GOOD\n"
+                f"If it needs improvement, reply only: NEEDS_WORK: <short reason>\n"
+                f"Do not add any other text, explanation, or punctuation."
+            )
+            print(f"Reviewer decision: {check}\n")
+
+            if check.strip().startswith("GOOD"):
+                print("✅ Approved by reviewer!")
+                return draft
+            else:
+                feedback = check.replace("NEEDS_WORK:", "").strip()
+
+        print("⚠️ Max attempts reached, returning last version")
+        return draft
 
 
 if __name__ == "__main__":
-    topic = input("किस टॉपिक पर काम करना है? ")
+    topic = input("What topic should we work on? ")
     coordinator = Coordinator()
-    coordinator.run(topic)
+    final = coordinator.run(topic)
+    print(f"\n📝 Final Result:\n{final}")
