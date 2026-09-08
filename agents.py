@@ -14,19 +14,30 @@ class BaseAgent:
         self.name = name
         self.role = role  # This defines the agent's job/personality
 
+
     def run(self, prompt: str) -> str:
-        """Sends a prompt to the model and returns the response."""
+        """Sends a prompt to the model and returns the response. Retries on network errors."""
         full_prompt = (
             f"{self.role}\n\n"
             f"IMPORTANT: Always reply in the SAME language the user used "
             f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
             f"Task: {prompt}"
         )
-        response = client.models.generate_content(
-            model="gemini-flash-lite-latest",
-            contents=full_prompt,
-        )
-        return response.text
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-flash-lite-latest",
+                    contents=full_prompt,
+                )
+                return response.text
+            except Exception as e:
+                print(f"⚠️ {self.name} hit a network error (attempt {attempt}/{max_retries}): {e}")
+                if attempt == max_retries:
+                    return f"[Error: {self.name} could not get a response after {max_retries} attempts. Please try again.]"
+
+        return "[Unexpected error]"
 
 
 class ResearcherAgent(BaseAgent):
