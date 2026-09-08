@@ -94,6 +94,13 @@ class ManagerAgent:
                 )
                 print(f"Reviewed:\n{draft}\n")
 
+                        # Fallback: if no steps were needed (e.g. simple greeting), just respond directly
+            if not draft:
+                draft = self.writer.run(
+                    f"{context_task}\n\nThis is a simple conversational message (like a greeting). "
+                    f"Reply naturally and briefly, like a helpful assistant would."
+                )
+
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
 
