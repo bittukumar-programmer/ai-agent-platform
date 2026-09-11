@@ -2,10 +2,21 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from ddgs import DDGS
+from datetime import datetime
+
+
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
+
+
+def get_current_datetime() -> str:
+    """Returns the current date and time."""
+    now = datetime.now()
+    return now.strftime("%A, %d %B %Y, %I:%M %p")
+
+
 
 def web_search(query: str, max_results: int = 4) -> str:
     """Searches the web and returns a text summary of top results."""

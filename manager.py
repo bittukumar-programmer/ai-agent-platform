@@ -36,7 +36,9 @@ class ManagerAgent:
         """Asks the LLM to decide which steps are needed for this task."""
         prompt = (
             "You are a planning manager for a team of AI agents. "
-            "Available agents: 'research' (gathers facts), 'write' (turns facts into a paragraph), "
+            "Available agents: 'research' (gathers facts, use for general knowledge questions), "
+            "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
+            "'write' (turns facts into a paragraph), "
             "'review' (checks and polishes the final text).\n\n"
             f"Recent conversation:\n{self._history_text()}\n\n"
             f"New task: {task}\n\n"
@@ -47,6 +49,7 @@ class ManagerAgent:
             '["research", "write", "review"]\n'
             '["write"]\n'
             '["research", "write"]\n'
+            '["datetime", "write"]\n'
         )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
@@ -75,6 +78,12 @@ class ManagerAgent:
                 print("🔍 Researcher is working...")
                 research = self.researcher.run(f"Topic: {context_task}")
                 print(f"Research:\n{research}\n")
+
+            elif step == "datetime":
+                from agents import get_current_datetime
+                print("🕐 Getting current date/time...")
+                research = f"Current date and time: {get_current_datetime()}"
+                print(f"{research}\n")
 
             elif step == "write":
                 print("✍️ Writer is working...")
