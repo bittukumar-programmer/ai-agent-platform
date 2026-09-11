@@ -1,12 +1,24 @@
 import os
 from dotenv import load_dotenv
 from google import genai
+from ddgs import DDGS
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
-
+def web_search(query: str, max_results: int = 4) -> str:
+    """Searches the web and returns a text summary of top results."""
+    try:
+        results = DDGS().text(query, max_results=max_results)
+        if not results:
+            return "No search results found."
+        formatted = []
+        for r in results:
+            formatted.append(f"- {r['title']}: {r['body']}")
+        return "\n".join(formatted)
+    except Exception as e:
+        return f"[Search failed: {e}]"
 class BaseAgent:
     """Base template for all agents. Every agent inherits from this."""
 
@@ -46,6 +58,37 @@ class ResearcherAgent(BaseAgent):
             name="Researcher",
             role="You are a research assistant. Give 4-5 key facts, just bullet points, no extra text."
         )
+
+    def run(self, prompt: str) -> str:
+        """First searches the web for current info, then summarizes it into facts."""
+        print("   🌐 Searching the web...")
+        search_results = web_search(prompt)
+
+        full_prompt = (
+            f"{self.role}\n\n"
+            f"IMPORTANT: Always reply in the SAME language the user used "
+            f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
+            f"Here are live web search results:\n{search_results}\n\n"
+            f"Task: {prompt}\n\n"
+            f"Using the search results above, give 4-5 key facts as bullet points. "
+            f"Prefer information from the search results over your own memory, "
+            f"since the search results are more current."
+        )
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-flash-lite-latest",
+                    contents=full_prompt,
+                )
+                return response.text
+            except Exception as e:
+                print(f"⚠️ {self.name} hit a network error (attempt {attempt}/{max_retries}): {e}")
+                if attempt == max_retries:
+                    return f"[Error: {self.name} could not get a response after {max_retries} attempts.]"
+
+        return "[Unexpected error]"
 
 
 class WriterAgent(BaseAgent):
