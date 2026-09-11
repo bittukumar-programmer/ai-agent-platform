@@ -1,4 +1,8 @@
+
 # 🤖 Agent Deck — Multi-Agent AI Platform
+
+
+🔗 **Live Demo:** [ai-agent-platform-fjdy2ipwfkqvxcuictc75j.streamlit.app](https://ai-agent-platform-fjdy2ipwfkqvxcuictc75j.streamlit.app)
 
 A multi-agent AI system where a **Manager Agent** dynamically plans which specialized agents (Researcher, Writer, Reviewer) are needed for a given task — instead of running a fixed pipeline every time.
 
