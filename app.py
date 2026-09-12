@@ -81,7 +81,7 @@ if user_input:
             if steps:
                 pills = "".join(f'<span class="plan-pill {s}">{s}</span>' for s in steps)
                 st.markdown(f'<div class="plan-strip">{pills}</div>', unsafe_allow_html=True)
-            result = st.session_state.manager.execute(user_input)
-        st.write(result)
+            result = st.session_state.manager.execute(user_input, steps=steps)
+            st.write(result)
 
     st.session_state.messages.append({"role": "assistant", "content": result, "plan": steps})

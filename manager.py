@@ -63,8 +63,9 @@ class ManagerAgent:
             steps = ["research", "write", "review"]
         return steps
 
-    def execute(self, task: str):
-        steps = self.plan(task)
+    def execute(self, task: str, steps: list = None):
+        if steps is None:
+            steps = self.plan(task)
         print(f"\n🧠 Manager decided the steps: {steps}\n")
 
         # Include recent history in the task context so agents understand follow-ups
@@ -104,11 +105,11 @@ class ManagerAgent:
                 print(f"Reviewed:\n{draft}\n")
 
                         # Fallback: if no steps were needed (e.g. simple greeting), just respond directly
-            if not draft:
-                draft = self.writer.run(
-                    f"{context_task}\n\nThis is a simple conversational message (like a greeting). "
-                    f"Reply naturally and briefly, like a helpful assistant would."
-                )
+        if not draft:
+            draft = self.writer.run(
+                f"{context_task}\n\nThis is a simple conversational message (like a greeting). "
+                f"Reply naturally and briefly, like a helpful assistant would."
+            )
 
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
