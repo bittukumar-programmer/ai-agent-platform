@@ -2,8 +2,7 @@ import os
 import json
 from dotenv import load_dotenv
 from google import genai
-from agents import ResearcherAgent, WriterAgent, ReviewerAgent
-
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -18,6 +17,7 @@ class ManagerAgent:
 
     def __init__(self):
         self.researcher = ResearcherAgent()
+        self.creative = CreativeAgent()
         self.writer = WriterAgent()
         self.reviewer = ReviewerAgent()
         self.history = []  # stores {"task": ..., "result": ...} for past turns
@@ -39,7 +39,9 @@ class ManagerAgent:
             "If the task is asking about your identity, creator, owner, or developer, "
             "NEVER use 'research' (do not search the web for this) — just use ['write'].\n\n"
             "Available agents: 'research' (gathers facts, use for general knowledge questions), "
-            "Available agents: 'research' (gathers facts, use for general knowledge questions), "
+            "'creative' (writes original stories, poems, jokes, playful roasts, or emotional/motivational "
+            "messages — use for entertainment or creative requests, NOT factual ones), "
+             
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
             "'review' (checks and polishes the final text).\n\n"
@@ -53,6 +55,7 @@ class ManagerAgent:
             '["write"]\n'
             '["research", "write"]\n'
             '["datetime", "write"]\n'
+            '["creative"]\n'
         )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
