@@ -36,6 +36,9 @@ class ManagerAgent:
         """Asks the LLM to decide which steps are needed for this task."""
         prompt = (
             "You are a planning manager for a team of AI agents. "
+            "If the task is asking about your identity, creator, owner, or developer, "
+            "NEVER use 'research' (do not search the web for this) — just use ['write'].\n\n"
+            "Available agents: 'research' (gathers facts, use for general knowledge questions), "
             "Available agents: 'research' (gathers facts, use for general knowledge questions), "
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "

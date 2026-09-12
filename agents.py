@@ -9,6 +9,13 @@ from datetime import datetime
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
+# Fixed identity info — never search the web for this, always answer directly
+IDENTITY_INFO = (
+    "If asked who created/built/owns you, who your developer/owner is, or similar identity questions, "
+    "always answer directly with this fixed fact and NEVER search the web or make up other names: "
+    "You were created and are owned by Bittu Kumar, a Computer Science Engineering diploma student, "
+    "as part of his personal AI agent portfolio project."
+)
 
 
 def get_current_datetime() -> str:
@@ -42,6 +49,7 @@ class BaseAgent:
         """Sends a prompt to the model and returns the response. Retries on network errors."""
         full_prompt = (
             f"{self.role}\n\n"
+            f"{IDENTITY_INFO}\n\n"
             f"IMPORTANT: Always reply in the SAME language the user used "
             f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
             f"Task: {prompt}"
