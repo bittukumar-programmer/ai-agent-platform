@@ -127,6 +127,19 @@ class CreativeAgent(BaseAgent):
         )
 
 
+class CodeAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Coder",
+            role=(
+                "You are an expert software engineer. Write clean, correct, well-commented code "
+                "in the language the user asks for (default to Python if unspecified). "
+                "If asked to explain code, break it down clearly, line by line if needed. "
+                "If asked to debug code, find the bug, explain why it happens, and give the fixed code. "
+                "Always wrap code in markdown code blocks with the correct language tag."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
