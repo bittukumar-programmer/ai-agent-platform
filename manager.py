@@ -1,10 +1,12 @@
 import os
 import json
 from dotenv import load_dotenv
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
+from agents import get_current_datetime, generate_image
 
 
 class ManagerAgent:
@@ -21,6 +23,7 @@ class ManagerAgent:
         self.reviewer = ReviewerAgent()
         self.history = []  # stores {"task": ..., "result": ...} for past turns
         self.coder = CodeAgent()
+        self.math = MathAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -47,6 +50,9 @@ class ManagerAgent:
             "'code' (writes, explains, or debugs code, or explains programming/CS concepts like loops, "
             "functions, data structures, algorithms — use this for ANY programming or computer-science-related "
             "request instead of 'research'), "
+            "'math' (does EXACT calculations — use for any arithmetic or math computation request), "
+            "'image' (generates a picture from a text description — use ONLY when the user explicitly "
+            "asks to create/draw/generate an image or picture), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -64,6 +70,9 @@ class ManagerAgent:
             '["datetime", "write"]\n'
             '["creative"]\n'
             '["code"]\n'
+            '["math"]\n'
+            '["image"]\n'
+            
         )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
@@ -87,6 +96,7 @@ class ManagerAgent:
 
         research = ""
         draft = ""
+        generated_image = None
 
         for step in steps:
             if step == "research":
@@ -113,6 +123,16 @@ class ManagerAgent:
                 draft = self.coder.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
+            elif step == "math":
+                print("🔢 Math agent is working...")
+                draft = self.math.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "image":
+                print("🎨 Generating image...")
+                generated_image = generate_image(task)
+                draft = "Here's the image you asked for!" if generated_image else "Sorry, I couldn't generate the image."
+
             elif step == "review":
                 print("🔎 Reviewer is working...")
                 draft = self.reviewer.run(
@@ -133,7 +153,7 @@ class ManagerAgent:
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
 
-        return draft
+        return draft, generated_image
 
 
 if __name__ == "__main__":
@@ -146,6 +166,9 @@ if __name__ == "__main__":
             print("Goodbye!")
             break
 
-        result = manager.execute(task)
+        result, image = manager.execute(task)
         print(f"\n📝 Final Result:\n{result}\n")
+        if image:
+            image.save("generated_image.png")
+            print("🖼️ Image saved as generated_image.png\n")
         print("-" * 50)

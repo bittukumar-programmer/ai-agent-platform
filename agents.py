@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 from ddgs import DDGS
 from datetime import datetime
+from google.genai import types
 
 
 
@@ -37,6 +38,36 @@ def web_search(query: str, max_results: int = 4) -> str:
         return "\n".join(formatted)
     except Exception as e:
         return f"[Search failed: {e}]"
+
+
+
+def calculate(expression: str) -> str:
+    """Safely evaluates a math expression and returns the exact result."""
+    try:
+        # Only allow safe characters (numbers, operators, parentheses, decimal point)
+        allowed = set("0123456789+-*/(). ")
+        if not all(char in allowed for char in expression):
+            return "Error: expression contains invalid characters."
+        result = eval(expression)
+        return str(result)
+    except Exception as e:
+        return f"Error: {e}"
+
+def generate_image(prompt: str):
+    """Generates an image from a text prompt. Returns PIL Image object or None on failure."""
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-image",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_modalities=["IMAGE"]),
+        )
+        for part in response.parts:
+            if part.inline_data:
+                return part.as_image()
+        return None
+    except Exception as e:
+        print(f"Image generation failed: {e}")
+        return None
 class BaseAgent:
     """Base template for all agents. Every agent inherits from this."""
 
@@ -139,6 +170,42 @@ class CodeAgent(BaseAgent):
                 "Always wrap code in markdown code blocks with the correct language tag."
             )
         )
+
+
+class MathAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Math",
+            role="You are a math assistant that explains calculations clearly using exact computed results."
+        )
+
+    def run(self, prompt: str) -> str:
+        """Extracts the math expression, computes it exactly, then explains the result."""
+        extraction_prompt = (
+            f"Extract ONLY the pure math expression from this request, using just numbers and "
+            f"+ - * / ( ) . nothing else, no words. If there are multiple operations, "
+            f"combine them into one expression. Reply with ONLY the expression.\n\n"
+            f"Request: {prompt}"
+        )
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=extraction_prompt,
+        )
+        expression = response.text.strip()
+        exact_result = calculate(expression)
+
+        full_prompt = (
+            f"{self.role}\n\n"
+            f"{IDENTITY_INFO}\n\n"
+            f"The exact computed answer to '{expression}' is: {exact_result}\n\n"
+            f"Task: {prompt}\n\n"
+            f"Give a short, clear answer using this EXACT computed result. Do not recalculate yourself."
+        )
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=full_prompt,
+        )
+        return response.text
 
 class WriterAgent(BaseAgent):
     def __init__(self):

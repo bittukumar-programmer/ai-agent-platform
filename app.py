@@ -153,6 +153,8 @@ for msg in st.session_state.messages:
         if msg.get("plan"):
             render_plan_pills(msg["plan"])
         st.write(msg["content"])
+        if msg.get("image"):
+            st.image(msg["image"])
 
 # ---- New input ----
 typed_input = st.chat_input("What do you need?")
@@ -169,7 +171,9 @@ if user_input:
             steps = st.session_state.manager.plan(user_input)
             if steps:
                 render_plan_pills(steps)
-            result = st.session_state.manager.execute(user_input, steps=steps)
+            result, image = st.session_state.manager.execute(user_input, steps=steps)
             st.write(result)
+            if image:
+                st.image(image)
 
-    st.session_state.messages.append({"role": "assistant", "content": result, "plan": steps})
+    st.session_state.messages.append({"role": "assistant", "content": result, "plan": steps, "image": image})
