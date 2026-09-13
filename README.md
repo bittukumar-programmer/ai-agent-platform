@@ -8,12 +8,15 @@ A multi-agent AI system where a **Manager Agent** dynamically plans which specia
 
 ## Features
 
-- **Dynamic planning** — the Manager decides in real time whether a task needs research, writing, review, or just a direct reply.
+- **Dynamic planning** — the Manager decides in real time which specialized agents a task actually needs, instead of running a fixed pipeline every time.
+- **Six specialized agents** — Researcher, Writer, Reviewer, Creative (stories/poems/jokes/roasts), Coder (writes/explains/debugs code), and a live Date/Time tool.
 - **Self-correction loop** — the Writer and Reviewer go back and forth until the output is approved, instead of settling for a first draft.
+- **Live web search** — the Researcher pulls current information from the web instead of relying only on the model's training data.
 - **Conversation memory** — remembers recent turns, so follow-up requests like "make it shorter" work naturally.
 - **Multi-language support** — replies in English, Hindi, or Hinglish, matching whatever language the user typed in.
+- **Fixed identity** — always answers ownership/creator questions directly instead of guessing or searching.
 - **Error handling** — automatically retries on network/API failures instead of crashing.
-- **Web interface** — a chat-style UI built with Streamlit, showing which agents worked on each response.
+- **Polished web interface** — a custom-designed chat UI built with Streamlit, showing which agents worked on each response.
 
 ## Tech Stack
 
@@ -24,8 +27,7 @@ A multi-agent AI system where a **Manager Agent** dynamically plans which specia
 ## How It Works
 
 1. User sends a request.
-2. The **Manager Agent** analyzes it and decides which steps are needed (e.g. `["research", "write", "review"]`).
-3. Each required agent runs in order, passing its output to the next.
+2. The Manager Agent analyzes it and decides which agents are needed (e.g. `["research", "write", "review"]`, `["code"]`, or `["creative"]`).3. Each required agent runs in order, passing its output to the next.
 4. If the Reviewer isn't satisfied, the Writer retries with feedback (self-correction).
 5. The final response is returned, and the exchange is saved to memory for future context.
 
