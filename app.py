@@ -1,6 +1,7 @@
 import streamlit as st
 from manager import ManagerAgent
 from agents import get_current_datetime
+from PIL import Image
 
 st.set_page_config(page_title="Agent Deck", page_icon="◆", layout="centered")
 
@@ -157,6 +158,10 @@ for msg in st.session_state.messages:
             st.image(msg["image"])
 
 # ---- New input ----
+uploaded_file = st.file_uploader(
+    "📎", type=["png", "jpg", "jpeg"], label_visibility="collapsed",
+    key=f"uploader_{len(st.session_state.messages)}"
+)
 typed_input = st.chat_input("What do you need?")
 user_input = st.session_state.pending_input or typed_input
 st.session_state.pending_input = None
@@ -164,16 +169,19 @@ st.session_state.pending_input = None
 if user_input:
     with st.chat_message("user", avatar=AGENT_ICON["user"]):
         st.write(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+        uploaded_image = Image.open(uploaded_file) if uploaded_file else None
+        if uploaded_image:
+            st.image(uploaded_image)
+    st.session_state.messages.append({"role": "user", "content": user_input, "image": uploaded_image})
 
     with st.chat_message("assistant", avatar=AGENT_ICON["assistant"]):
         with st.spinner("Agents at work..."):
-            steps = st.session_state.manager.plan(user_input)
+            steps = st.session_state.manager.plan(user_input, has_image=(uploaded_image is not None))
             if steps:
                 render_plan_pills(steps)
-            result, image = st.session_state.manager.execute(user_input, steps=steps)
+            result, generated_image = st.session_state.manager.execute(user_input, steps=steps, image=uploaded_image)
             st.write(result)
-            if image:
-                st.image(image)
+            if generated_image:
+                st.image(generated_image)
 
-    st.session_state.messages.append({"role": "assistant", "content": result, "plan": steps, "image": image})
+    st.session_state.messages.append({"role": "assistant", "content": result, "plan": steps, "image": generated_image})

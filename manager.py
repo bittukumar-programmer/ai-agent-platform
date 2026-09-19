@@ -35,10 +35,13 @@ class ManagerAgent:
             lines.append(f"Turn {i} - Result: {turn['result'][:300]}")  # trim long results
         return "\n".join(lines)
 
-    def plan(self, task: str) -> list:
+    def plan(self, task: str, has_image: bool = False) -> list:
         """Asks the LLM to decide which steps are needed for this task."""
         prompt = (
             "You are a planning manager for a team of AI agents. "
+            "You are a planning manager for a team of AI agents. "
+            + ("An image has been attached by the user — if their request is about the image, use ['write'] so the Writer can analyze it.\n\n" if has_image else "")
+            + "If the task is asking about your identity, creator, owner, or developer, "
             "If the task is asking about your identity, creator, owner, or developer, "
             "NEVER use 'research' (do not search the web for this) — just use ['write'].\n\n"
             "Available agents: 'research' (gathers facts, use for general knowledge questions), "
@@ -86,7 +89,7 @@ class ManagerAgent:
             steps = ["research", "write", "review"]
         return steps
 
-    def execute(self, task: str, steps: list = None):
+    def execute(self, task: str, steps: list = None, image=None):
         if steps is None:
             steps = self.plan(task)
         print(f"\n🧠 Manager decided the steps: {steps}\n")
@@ -115,10 +118,14 @@ class ManagerAgent:
                 writer_input = f"Topic: {context_task}"
                 if research:
                     writer_input += f"\nFacts:\n{research}"
-                draft = self.writer.run(writer_input)
-                print(f"Draft:\n{draft}\n")
+                if image is not None:
+                    draft = self.writer.run_with_image(writer_input, image)
+                else:
+                    draft = self.writer.run(writer_input)
+
 
             elif step == "code":
+
                 print("💻 Code agent is working...")
                 draft = self.coder.run(context_task)
                 print(f"Draft:\n{draft}\n")

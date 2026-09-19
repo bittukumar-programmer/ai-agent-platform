@@ -215,6 +215,24 @@ class WriterAgent(BaseAgent):
         )
 
 
+class WriterAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Writer",
+            role="You are a skilled writer. Turn the given facts into a short, engaging paragraph for a general audience."
+        )
+
+    def run_with_image(self, prompt: str, image) -> str:
+        """Answers a question about an uploaded image."""
+        try:
+            response = client.models.generate_content(
+                model="gemini-flash-lite-latest",
+                contents=[image, prompt],
+            )
+            return response.text
+        except Exception as e:
+            return f"[Error analyzing image: {e}]"
+
 class ReviewerAgent(BaseAgent):
     def __init__(self):
         super().__init__(
