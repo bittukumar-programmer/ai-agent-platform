@@ -5,6 +5,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from google import genai
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -28,6 +29,7 @@ class ManagerAgent:
         self.math = MathAgent()
         self.translator = TranslatorAgent()
         self.summarizer = SummarizerAgent()
+        self.planner = PlannerAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -65,6 +67,8 @@ class ManagerAgent:
 
             "'summarize' (condenses long text into key points — use when the user gives you text "
             "and asks to summarize, shorten, or condense it), "
+            "'plan' (breaks a goal or task into a step-by-step to-do list — use when the user asks "
+            "how to approach, organize, or plan something), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -86,6 +90,7 @@ class ManagerAgent:
             '["image"]\n'
             '["translate"]\n'
             '["summarize"]\n'
+            '["plan"]\n'
             
         )
         response = client.models.generate_content(
@@ -154,6 +159,11 @@ class ManagerAgent:
             elif step == "summarize":
                 print("📋 Summarizer is working...")
                 draft = self.summarizer.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "plan":
+                print("📅 Planner is working...")
+                draft = self.planner.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

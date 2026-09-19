@@ -232,6 +232,17 @@ class SummarizerAgent(BaseAgent):
             )
         )
 
+class PlannerAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Planner",
+            role=(
+                "You are an expert planner and organizer. Break down goals, projects, or tasks into "
+                "clear, actionable steps or a to-do list. Keep steps specific and realistic, and order "
+                "them logically. Use numbered or bulleted lists."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
