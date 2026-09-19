@@ -3,6 +3,7 @@ import json
 from dotenv import load_dotenv
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -24,6 +25,7 @@ class ManagerAgent:
         self.history = []  # stores {"task": ..., "result": ...} for past turns
         self.coder = CodeAgent()
         self.math = MathAgent()
+        self.translator = TranslatorAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -56,6 +58,8 @@ class ManagerAgent:
             "'math' (does EXACT calculations — use for any arithmetic or math computation request), "
             "'image' (generates a picture from a text description — use ONLY when the user explicitly "
             "asks to create/draw/generate an image or picture), "
+            "'translate' (translates text into another language — use when the user explicitly asks "
+            "to translate something), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -133,6 +137,11 @@ class ManagerAgent:
             elif step == "math":
                 print("🔢 Math agent is working...")
                 draft = self.math.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "translate":
+                print("🌐 Translator is working...")
+                draft = self.translator.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

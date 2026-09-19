@@ -207,6 +207,19 @@ class MathAgent(BaseAgent):
         )
         return response.text
 
+
+class TranslatorAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Translator",
+            role=(
+                "You are an expert translator. Translate the given text accurately into the "
+                "language the user asks for, preserving tone and meaning. If no target language "
+                "is specified but the request implies one, infer it. Reply with ONLY the translation, "
+                "unless the user also asks for an explanation."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
