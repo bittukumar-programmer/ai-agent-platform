@@ -220,6 +220,18 @@ class TranslatorAgent(BaseAgent):
             )
         )
 
+class SummarizerAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Summarizer",
+            role=(
+                "You are an expert at summarizing text. Take the given text and condense it into "
+                "the key points, keeping only what matters. Use bullet points for clarity unless "
+                "the user asks for a paragraph. Be concise — a summary should always be much shorter "
+                "than the original."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(

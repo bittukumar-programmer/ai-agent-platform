@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -26,6 +27,7 @@ class ManagerAgent:
         self.coder = CodeAgent()
         self.math = MathAgent()
         self.translator = TranslatorAgent()
+        self.summarizer = SummarizerAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -61,6 +63,9 @@ class ManagerAgent:
             "'translate' (translates text into another language — use when the user explicitly asks "
             "to translate something), "
 
+            "'summarize' (condenses long text into key points — use when the user gives you text "
+            "and asks to summarize, shorten, or condense it), "
+
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
@@ -79,6 +84,8 @@ class ManagerAgent:
             '["code"]\n'
             '["math"]\n'
             '["image"]\n'
+            '["translate"]\n'
+            '["summarize"]\n'
             
         )
         response = client.models.generate_content(
@@ -142,6 +149,11 @@ class ManagerAgent:
             elif step == "translate":
                 print("🌐 Translator is working...")
                 draft = self.translator.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "summarize":
+                print("📋 Summarizer is working...")
+                draft = self.summarizer.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
