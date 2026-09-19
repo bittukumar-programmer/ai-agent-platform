@@ -6,6 +6,7 @@ from google import genai
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -30,6 +31,7 @@ class ManagerAgent:
         self.translator = TranslatorAgent()
         self.summarizer = SummarizerAgent()
         self.planner = PlannerAgent()
+        self.interview_coach = InterviewCoachAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -69,6 +71,8 @@ class ManagerAgent:
             "and asks to summarize, shorten, or condense it), "
             "'plan' (breaks a goal or task into a step-by-step to-do list — use when the user asks "
             "how to approach, organize, or plan something), "
+             "'interview' (helps practice interview answers, gives feedback using STAR method, or shares "
+            "interview tips — use for job interview preparation requests), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -91,6 +95,7 @@ class ManagerAgent:
             '["translate"]\n'
             '["summarize"]\n'
             '["plan"]\n'
+            '["interview"]\n'
             
         )
         response = client.models.generate_content(
@@ -164,6 +169,11 @@ class ManagerAgent:
             elif step == "plan":
                 print("📅 Planner is working...")
                 draft = self.planner.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "interview":
+                print("🎤 Interview Coach is working...")
+                draft = self.interview_coach.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

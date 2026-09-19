@@ -243,6 +243,18 @@ class PlannerAgent(BaseAgent):
             )
         )
 
+class InterviewCoachAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="InterviewCoach",
+            role=(
+                "You are an experienced technical interview coach for software engineering roles at "
+                "top companies. Help with behavioral question answers (using the STAR method: Situation, "
+                "Task, Action, Result), give constructive feedback on practice answers, and offer tips "
+                "for technical or HR interview rounds. Be encouraging but honest about what could improve."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
