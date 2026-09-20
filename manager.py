@@ -11,6 +11,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -40,6 +41,7 @@ class ManagerAgent:
         self.tutor = TutorAgent()
         self.email = EmailAgent()
         self.news = NewsAgent()
+        self.proofreader = ProofreaderAgent()
 
 
     def _history_text(self) -> str:
@@ -90,6 +92,8 @@ class ManagerAgent:
             "write or draft an email), "
             "'news' (gets a live news digest on a topic — use when the user specifically asks for "
             "news, headlines, or 'what's happening' on a topic), "
+            "'proofread' (fixes grammar, spelling, and clarity in given text — use when the user gives "
+            "text and asks to check, correct, fix, or proofread it), "
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
@@ -116,6 +120,7 @@ class ManagerAgent:
             '["tutor"]\n'
             '["email"]\n'
             '["news"]\n'
+            '["proofread"]\n'
             
         )
         response = client.models.generate_content(
@@ -211,10 +216,15 @@ class ManagerAgent:
                 draft = self.email.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
-                
+
             elif step == "news":
                 print("📰 News agent is working...")
                 draft = self.news.run(task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "proofread":
+                print("✔️ Proofreader is working...")
+                draft = self.proofreader.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

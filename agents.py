@@ -329,6 +329,17 @@ class NewsAgent(BaseAgent):
 
         return "[Unexpected error]"
 
+class ProofreaderAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Proofreader",
+            role=(
+                "You are an expert proofreader and editor. Fix grammar, spelling, punctuation, and "
+                "clarity issues in the given text while preserving the original meaning and tone. "
+                "If asked, briefly list what you changed and why. Otherwise, just give the corrected text."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
