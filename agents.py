@@ -255,6 +255,18 @@ class InterviewCoachAgent(BaseAgent):
             )
         )
 
+class ResumeAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Resume",
+            role=(
+                "You are an expert resume and cover letter writer for software engineering roles. "
+                "Turn plain descriptions of projects or experience into strong, quantified resume bullet "
+                "points (using action verbs and metrics where possible), or write concise, tailored cover "
+                "letters. Keep language professional, concrete, and free of fluff or exaggeration."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(

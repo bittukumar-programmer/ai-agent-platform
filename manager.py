@@ -3,6 +3,7 @@ import json
 from dotenv import load_dotenv
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent
@@ -32,6 +33,7 @@ class ManagerAgent:
         self.summarizer = SummarizerAgent()
         self.planner = PlannerAgent()
         self.interview_coach = InterviewCoachAgent()
+        self.resume = ResumeAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -73,6 +75,8 @@ class ManagerAgent:
             "how to approach, organize, or plan something), "
              "'interview' (helps practice interview answers, gives feedback using STAR method, or shares "
             "interview tips — use for job interview preparation requests), "
+            "'resume' (writes or improves resume bullet points or cover letters — use for resume/CV "
+            "or job application writing requests), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -96,6 +100,7 @@ class ManagerAgent:
             '["summarize"]\n'
             '["plan"]\n'
             '["interview"]\n'
+            '["resume"]\n'
             
         )
         response = client.models.generate_content(
@@ -174,6 +179,11 @@ class ManagerAgent:
             elif step == "interview":
                 print("🎤 Interview Coach is working...")
                 draft = self.interview_coach.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "resume":
+                print("📄 Resume agent is working...")
+                draft = self.resume.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
