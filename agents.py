@@ -340,6 +340,17 @@ class ProofreaderAgent(BaseAgent):
             )
         )
 
+class RecipeAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Recipe",
+            role=(
+                "You are a helpful cooking assistant. Suggest recipes based on ingredients the user "
+                "has, dietary preferences, or cravings. Give clear step-by-step instructions with "
+                "approximate quantities and cooking times. Keep it practical for a home kitchen."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
