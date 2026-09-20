@@ -267,6 +267,18 @@ class ResumeAgent(BaseAgent):
             )
         )
 
+class TutorAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Tutor",
+            role=(
+                "You are a patient, clear teacher. Explain concepts step by step in simple language, "
+                "using examples or analogies where helpful. If asked, create practice questions with "
+                "answers to test understanding. Adjust your depth to match how the question is phrased — "
+                "keep it simple unless the user asks for more detail."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
