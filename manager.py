@@ -9,6 +9,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -36,6 +37,7 @@ class ManagerAgent:
         self.interview_coach = InterviewCoachAgent()
         self.resume = ResumeAgent()
         self.tutor = TutorAgent()
+        self.email = EmailAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -81,6 +83,8 @@ class ManagerAgent:
             "or job application writing requests), "
             "'tutor' (explains concepts step by step like a teacher, or creates practice questions — "
             "use when the user wants to learn or understand a topic, not just get quick facts), "
+            "'email' (drafts professional emails with a subject line — use when the user asks to "
+            "write or draft an email), "
 
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
@@ -106,6 +110,7 @@ class ManagerAgent:
             '["interview"]\n'
             '["resume"]\n'
             '["tutor"]\n'
+            '["email"]\n'
             
         )
         response = client.models.generate_content(
@@ -194,6 +199,11 @@ class ManagerAgent:
             elif step == "tutor":
                 print("📚 Tutor is working...")
                 draft = self.tutor.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "email":
+                print("📧 Email agent is working...")
+                draft = self.email.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

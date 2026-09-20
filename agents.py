@@ -279,6 +279,18 @@ class TutorAgent(BaseAgent):
             )
         )
 
+class EmailAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Email",
+            role=(
+                "You are an expert at writing clear, professional emails. Draft emails based on the "
+                "user's request — job applications, follow-ups, requests, or general correspondence. "
+                "Include an appropriate subject line. Keep tone polite and to the point, adapting "
+                "formality to the context described."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
