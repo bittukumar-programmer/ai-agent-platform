@@ -290,6 +290,44 @@ class EmailAgent(BaseAgent):
                 "formality to the context described."
             )
         )
+class NewsAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="News",
+            role=(
+                "You are a news digest assistant. Summarize current news on the requested topic in a "
+                "clear, neutral, headline-style format — a short headline followed by 1-2 sentences per "
+                "story. Stick strictly to what the search results say; never invent details."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        """Searches the web for current news, then formats it as a digest."""
+        print("   🌐 Searching for news...")
+        search_results = web_search(f"latest news headlines {prompt} today", max_results=6)
+
+        full_prompt = (
+            f"{self.role}\n\n"
+            f"{IDENTITY_INFO}\n\n"
+            f"Here are live web search results:\n{search_results}\n\n"
+            f"Task: {prompt}\n\n"
+            f"Using ONLY the search results above, give a short news digest."
+        )
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-flash-lite-latest",
+                    contents=full_prompt,
+                )
+                return response.text
+            except Exception as e:
+                print(f"⚠️ {self.name} hit a network error (attempt {attempt}/{max_retries}): {e}")
+                if attempt == max_retries:
+                    return f"[Error: {self.name} could not get a response after {max_retries} attempts.]"
+
+        return "[Unexpected error]"
 
 class WriterAgent(BaseAgent):
     def __init__(self):

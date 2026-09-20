@@ -10,6 +10,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -38,6 +39,8 @@ class ManagerAgent:
         self.resume = ResumeAgent()
         self.tutor = TutorAgent()
         self.email = EmailAgent()
+        self.news = NewsAgent()
+
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -85,7 +88,8 @@ class ManagerAgent:
             "use when the user wants to learn or understand a topic, not just get quick facts), "
             "'email' (drafts professional emails with a subject line — use when the user asks to "
             "write or draft an email), "
-
+            "'news' (gets a live news digest on a topic — use when the user specifically asks for "
+            "news, headlines, or 'what's happening' on a topic), "
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
@@ -111,6 +115,7 @@ class ManagerAgent:
             '["resume"]\n'
             '["tutor"]\n'
             '["email"]\n'
+            '["news"]\n'
             
         )
         response = client.models.generate_content(
@@ -204,6 +209,12 @@ class ManagerAgent:
             elif step == "email":
                 print("📧 Email agent is working...")
                 draft = self.email.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+                
+            elif step == "news":
+                print("📰 News agent is working...")
+                draft = self.news.run(task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
