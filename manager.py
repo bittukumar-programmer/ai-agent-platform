@@ -1,5 +1,6 @@
 import os
 import json
+from memory_store import load_memory, save_memory
 from dotenv import load_dotenv
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
@@ -34,7 +35,7 @@ class ManagerAgent:
         self.creative = CreativeAgent()
         self.writer = WriterAgent()
         self.reviewer = ReviewerAgent()
-        self.history = []  # stores {"task": ..., "result": ...} for past turns
+        self.history = load_memory()  # load past conversation history from local file
         self.coder = CodeAgent()
         self.math = MathAgent()
         self.translator = TranslatorAgent()
@@ -299,6 +300,7 @@ class ManagerAgent:
 
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
+        save_memory(self.history)
 
         return draft, generated_image
 
