@@ -375,6 +375,46 @@ class DecisionAgent(BaseAgent):
             )
         )
 
+
+class FactCheckAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="FactCheck",
+            role=(
+                "You are a careful fact-checker. Verify claims using the live search results provided. "
+                "Clearly state whether the claim appears TRUE, FALSE, or UNCLEAR based on the evidence, "
+                "explain why, and cite what the sources say. Be honest about uncertainty — never guess."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        """Searches the web to verify a claim, then gives a verdict."""
+        print("   🌐 Searching to verify claim...")
+        search_results = web_search(prompt, max_results=5)
+
+        full_prompt = (
+            f"{self.role}\n\n"
+            f"{IDENTITY_INFO}\n\n"
+            f"Here are live web search results:\n{search_results}\n\n"
+            f"Claim to check: {prompt}\n\n"
+            f"Based ONLY on the search results above, give a verdict (TRUE / FALSE / UNCLEAR) and explain why."
+        )
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-flash-lite-latest",
+                    contents=full_prompt,
+                )
+                return response.text
+            except Exception as e:
+                print(f"⚠️ {self.name} hit a network error (attempt {attempt}/{max_retries}): {e}")
+                if attempt == max_retries:
+                    return f"[Error: {self.name} could not get a response after {max_retries} attempts.]"
+
+        return "[Unexpected error]"
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(

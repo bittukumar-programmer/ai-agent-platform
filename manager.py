@@ -15,6 +15,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent, TravelAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent, TravelAgent, DecisionAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent, TravelAgent, DecisionAgent, FactCheckAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -48,6 +49,7 @@ class ManagerAgent:
         self.recipe = RecipeAgent()
         self.travel = TravelAgent()
         self.decision = DecisionAgent()
+        self.factcheck = FactCheckAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -118,6 +120,9 @@ class ManagerAgent:
             "Decide which agents are needed and in what order for this NEW task. "
             "'decision' (helps weigh pros/cons of a difficult choice — use when the user is torn "
             "between options and wants help deciding), "
+
+            "'factcheck' (verifies if a claim/statement is true or false using live search — use when "
+            "the user asks to verify, check, or fact-check something), "
     
             "Decide which agents are needed and in what order for this NEW task. "
             "If the new task refers to something from the recent conversation "
@@ -143,6 +148,7 @@ class ManagerAgent:
             '["recipe"]\n'
             '["travel"]\n'
             '["decision"]\n'
+            '["factcheck"]\n'
             
         )
         response = client.models.generate_content(
@@ -257,6 +263,11 @@ class ManagerAgent:
             elif step == "travel":
                 print("✈️ Travel agent is working...")
                 draft = self.travel.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "factcheck":
+                print("✅ Fact-checker is working...")
+                draft = self.factcheck.run(task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "decision":
