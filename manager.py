@@ -13,6 +13,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent
+from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent, TutorAgent, EmailAgent, NewsAgent, ProofreaderAgent, RecipeAgent, TravelAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
@@ -44,6 +45,7 @@ class ManagerAgent:
         self.news = NewsAgent()
         self.proofreader = ProofreaderAgent()
         self.recipe = RecipeAgent()
+        self.travel = TravelAgent()
 
     def _history_text(self) -> str:
         """Turns the recent history into a short text block for context."""
@@ -97,12 +99,22 @@ class ManagerAgent:
             "text and asks to check, correct, fix, or proofread it), "
             "'recipe' (suggests recipes and cooking instructions — use for food/cooking-related "
             "requests), "
+            "'travel' (suggests destinations, itineraries, or travel tips — use for trip/vacation "
+            "planning requests), "
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
             "'review' (checks and polishes the final text).\n\n"
             f"Recent conversation:\n{self._history_text()}\n\n"
             f"New task: {task}\n\n"
+
+            "IMPORTANT RULE: 'travel', 'recipe', 'interview', 'tutor', 'email', 'resume', 'creative', "
+            "'code', 'math', 'translate', 'summarize', 'plan', 'news', and 'proofread' agents already "
+            "produce a complete, well-formatted final answer on their own — do NOT chain 'write' or "
+            "'review' after them, just use them alone (e.g. ['travel']). Only use 'write' and 'review' "
+            "together with 'research' for general knowledge questions.\n\n"
+            "Decide which agents are needed and in what order for this NEW task. "
+    
             "Decide which agents are needed and in what order for this NEW task. "
             "If the new task refers to something from the recent conversation "
             "(like 'make it shorter' or 'add more'), take that into account. "
@@ -125,6 +137,7 @@ class ManagerAgent:
             '["news"]\n'
             '["proofread"]\n'
             '["recipe"]\n'
+            '["travel"]\n'
             
         )
         response = client.models.generate_content(
@@ -234,6 +247,11 @@ class ManagerAgent:
             elif step == "recipe":
                 print("🍳 Recipe agent is working...")
                 draft = self.recipe.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "travel":
+                print("✈️ Travel agent is working...")
+                draft = self.travel.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

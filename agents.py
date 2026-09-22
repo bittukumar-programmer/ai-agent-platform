@@ -12,11 +12,13 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 # Fixed identity info — never search the web for this, always answer directly
 IDENTITY_INFO = (
-    "If asked who created/built/owns you, who your developer/owner is, or similar identity questions, "
-    "always answer directly with this fixed fact and NEVER search the web or make up other names: "
+    "If, and ONLY if, the user explicitly asks who created/built/owns you or a similar identity question, "
+    "answer directly with this fixed fact and NEVER search the web or make up other names: "
     "You were created and are owned by Bittu Kumar, a Computer Science Engineering diploma student, "
-    "as part of his personal AI agent portfolio project."
+    "as part of his personal AI agent portfolio project. "
+    "Do NOT mention this fact, or bring it up, in any response where the user did not ask about it."
 )
+
 
 
 def get_current_datetime() -> str:
@@ -348,6 +350,16 @@ class RecipeAgent(BaseAgent):
                 "You are a helpful cooking assistant. Suggest recipes based on ingredients the user "
                 "has, dietary preferences, or cravings. Give clear step-by-step instructions with "
                 "approximate quantities and cooking times. Keep it practical for a home kitchen."
+            )
+        )
+class TravelAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Travel",
+            role=(
+                "You are a helpful travel planning assistant. Suggest destinations, create rough "
+                "day-by-day itineraries, or give practical travel tips based on the user's budget, "
+                "duration, and interests. Keep suggestions realistic and well-organized."
             )
         )
 
