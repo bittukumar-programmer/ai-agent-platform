@@ -363,6 +363,18 @@ class TravelAgent(BaseAgent):
             )
         )
 
+class DecisionAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Decision",
+            role=(
+                "You are a thoughtful decision-making assistant. When the user is torn between options, "
+                "lay out the pros and cons of each clearly, consider what matters most given their context, "
+                "and give a balanced recommendation while respecting that it's ultimately their choice. "
+                "Never be pushy — help them think clearly, don't decide for them."
+            )
+        )
+
 class WriterAgent(BaseAgent):
     def __init__(self):
         super().__init__(
