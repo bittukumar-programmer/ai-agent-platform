@@ -1,7 +1,7 @@
 import os
 import json
-from memory_store import load_memory, save_memory
 from dotenv import load_dotenv
+from memory_store import save_memory, search_memory
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent
@@ -35,7 +35,7 @@ class ManagerAgent:
         self.creative = CreativeAgent()
         self.writer = WriterAgent()
         self.reviewer = ReviewerAgent()
-        self.history = load_memory()  # load past conversation history from local file
+        self.history = []  # kept for short-term context within this session
         self.coder = CodeAgent()
         self.math = MathAgent()
         self.translator = TranslatorAgent()
@@ -51,16 +51,24 @@ class ManagerAgent:
         self.travel = TravelAgent()
         self.decision = DecisionAgent()
         self.factcheck = FactCheckAgent()
+    def _history_text(self, current_task: str = "") -> str:
+        """Combines recent session context AND relevant long-term memories."""
+        parts = []
 
-    def _history_text(self) -> str:
-        """Turns the recent history into a short text block for context."""
-        if not self.history:
-            return "No previous conversation."
-        lines = []
-        for i, turn in enumerate(self.history[-3:], 1):  # only last 3 turns
-            lines.append(f"Turn {i} - User asked: {turn['task']}")
-            lines.append(f"Turn {i} - Result: {turn['result'][:300]}")  # trim long results
-        return "\n".join(lines)
+        if self.history:
+            lines = []
+            for i, turn in enumerate(self.history[-3:], 1):
+                lines.append(f"Turn {i} - User asked: {turn['task']}")
+                lines.append(f"Turn {i} - Result: {turn['result'][:300]}")
+            parts.append("Recent conversation:\n" + "\n".join(lines))
+
+        if current_task:
+            relevant_memories = search_memory(current_task)
+            if relevant_memories:
+                memory_text = "\n\n".join(relevant_memories)
+                parts.append(f"Relevant memories from past conversations:\n{memory_text}")
+
+        return "\n\n".join(parts) if parts else "No previous conversation."
 
     def plan(self, task: str, has_image: bool = False) -> list:
         """Asks the LLM to decide which steps are needed for this task."""
@@ -110,7 +118,7 @@ class ManagerAgent:
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
             "'review' (checks and polishes the final text).\n\n"
-            f"Recent conversation:\n{self._history_text()}\n\n"
+            f"Recent conversation:\n{self._history_text(task)}\n\n"
             f"New task: {task}\n\n"
 
             "IMPORTANT RULE: 'travel', 'recipe', 'interview', 'tutor', 'email', 'resume', 'creative', "
@@ -170,7 +178,7 @@ class ManagerAgent:
         print(f"\n🧠 Manager decided the steps: {steps}\n")
 
         # Include recent history in the task context so agents understand follow-ups
-        context_task = f"Recent conversation:\n{self._history_text()}\n\nNew request: {task}"
+        context_task = f"Recent conversation:\n{self._history_text(task)}\n\nNew request: {task}"
 
         research = ""
         draft = ""
@@ -300,7 +308,7 @@ class ManagerAgent:
 
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
-        save_memory(self.history)
+        save_memory(task, draft)
 
         return draft, generated_image
 
