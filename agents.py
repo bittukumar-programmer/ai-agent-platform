@@ -4,10 +4,14 @@ from google import genai
 from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
+
+
 from system_control import (
     open_notepad, create_folder, create_file, open_vscode, close_app,
-    open_app, open_folder_in_explorer, search_web
+    open_app, open_folder_in_explorer, search_web,
+    create_word_doc, create_excel_sheet, create_powerpoint, open_file
 )
+
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -438,6 +442,9 @@ class SystemAgent(BaseAgent):
                 '- open_folder_in_explorer: {"folder_path": "relative or absolute path"}\n'
                 '- search_web: {"query": "what to search"}\n'
                 "Reply with ONLY the JSON, nothing else."
+                '- search_web: {"query": "what to search"}\n'
+                '- open_file: {"file_path": "relative filename like solar_system.pptx"}\n'
+                "Reply with ONLY the JSON, nothing else."
             )
         )
 
@@ -471,10 +478,58 @@ class SystemAgent(BaseAgent):
                 return open_folder_in_explorer(**params)
             elif action == "search_web":
                 return search_web(**params)
+            elif action == "search_web":
+                return search_web(**params)
+            elif action == "open_file":
+                return open_file(**params)
             else:
                 return "I couldn't figure out which action to take."
         except Exception as e:
             return f"Error performing system action: {e}"
+
+
+class OfficeAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Office",
+            role=(
+                "You create Microsoft Office files. Based on the user's topic, generate real, "
+                "well-organized content yourself (don't just make placeholders), then decide the action:\n"
+                "- create_word_doc: write a full article/document on the topic\n"
+                "- create_excel_sheet: create relevant headers and sample data rows\n"
+                "- create_powerpoint: create 4-6 slides with title and bullet-point content on the topic\n\n"
+                'Reply with ONLY a JSON object like:\n'
+                '{"action": "create_word_doc", "params": {"filename": "essay.docx", "title": "...", "content": "..."}}\n'
+                '{"action": "create_excel_sheet", "params": {"filename": "data.xlsx", "sheet_title": "...", "headers": [...], "rows": [[...], [...]]}}\n'
+                '{"action": "create_powerpoint", "params": {"filename": "deck.pptx", "slides": [{"title": "...", "content": "..."}, ...]}}\n'
+                "Reply with ONLY the JSON, nothing else."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        """Generates real content for the requested Office file, then creates it."""
+        import json
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=f"{self.role}\n\nUser request: {prompt}",
+        )
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+
+        try:
+            decision = json.loads(raw)
+            action = decision.get("action")
+            params = decision.get("params", {})
+
+            if action == "create_word_doc":
+                return create_word_doc(**params)
+            elif action == "create_excel_sheet":
+                return create_excel_sheet(**params)
+            elif action == "create_powerpoint":
+                return create_powerpoint(**params)
+            else:
+                return "I couldn't figure out which Office file to create."
+        except Exception as e:
+            return f"Error creating Office file: {e}"
 
 class WriterAgent(BaseAgent):
     def __init__(self):

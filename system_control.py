@@ -1,5 +1,9 @@
 import os
 import subprocess
+from docx import Document
+from openpyxl import Workbook
+from pptx import Presentation
+from pptx.util import Inches
 
 # Base folder where the assistant will create files/folders, to keep things safe and organized
 WORKSPACE = os.path.join(os.path.expanduser("~"), "Desktop", "AI_Workspace")
@@ -116,3 +120,79 @@ def search_web(query: str) -> str:
         return f"Searched for '{query}' in your browser"
     except Exception as e:
         return f"Error searching: {e}"
+
+
+
+def create_word_doc(filename: str, title: str, content: str, folder_name: str = None) -> str:
+    """Creates a Word document with a title and body content."""
+    try:
+        base = os.path.join(WORKSPACE, folder_name) if folder_name else WORKSPACE
+        os.makedirs(base, exist_ok=True)
+        if not filename.endswith(".docx"):
+            filename += ".docx"
+        path = os.path.join(base, filename)
+
+        doc = Document()
+        doc.add_heading(title, level=1)
+        for paragraph in content.split("\n"):
+            if paragraph.strip():
+                doc.add_paragraph(paragraph)
+        doc.save(path)
+        return f"Created Word document '{filename}' at {path}"
+    except Exception as e:
+        return f"Error creating Word document: {e}"
+
+
+def create_excel_sheet(filename: str, sheet_title: str, headers: list, rows: list, folder_name: str = None) -> str:
+    """Creates an Excel sheet with headers and data rows."""
+    try:
+        base = os.path.join(WORKSPACE, folder_name) if folder_name else WORKSPACE
+        os.makedirs(base, exist_ok=True)
+        if not filename.endswith(".xlsx"):
+            filename += ".xlsx"
+        path = os.path.join(base, filename)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sheet_title[:31]  # Excel sheet name limit
+        if headers:
+            ws.append(headers)
+        for row in rows:
+            ws.append(row)
+        wb.save(path)
+        return f"Created Excel sheet '{filename}' at {path}"
+    except Exception as e:
+        return f"Error creating Excel sheet: {e}"
+
+
+def create_powerpoint(filename: str, slides: list, folder_name: str = None) -> str:
+    """Creates a PowerPoint presentation. slides = list of {'title': ..., 'content': ...}"""
+    try:
+        base = os.path.join(WORKSPACE, folder_name) if folder_name else WORKSPACE
+        os.makedirs(base, exist_ok=True)
+        if not filename.endswith(".pptx"):
+            filename += ".pptx"
+        path = os.path.join(base, filename)
+
+        prs = Presentation()
+        title_layout = prs.slide_layouts[1]  # title + content layout
+
+        for slide_data in slides:
+            slide = prs.slides.add_slide(title_layout)
+            slide.shapes.title.text = slide_data.get("title", "")
+            body = slide.placeholders[1]
+            body.text = slide_data.get("content", "")
+
+        prs.save(path)
+        return f"Created PowerPoint '{filename}' with {len(slides)} slides at {path}"
+    except Exception as e:
+        return f"Error creating PowerPoint: {e}"
+
+def open_file(file_path: str) -> str:
+    """Opens any file with its default application (e.g. a .pptx opens in PowerPoint)."""
+    try:
+        target = file_path if os.path.isabs(file_path) else os.path.join(WORKSPACE, file_path)
+        os.startfile(target)
+        return f"Opened {target}"
+    except Exception as e:
+        return f"Error opening file: {e}"

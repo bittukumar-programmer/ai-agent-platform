@@ -5,6 +5,7 @@ from memory_store import save_memory, search_memory
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
 from agents import SystemAgent
+from agents import SystemAgent, OfficeAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
@@ -53,6 +54,7 @@ class ManagerAgent:
         self.decision = DecisionAgent()
         self.factcheck = FactCheckAgent()
         self.system = SystemAgent()
+        self.office = OfficeAgent()
 
 
 
@@ -125,6 +127,9 @@ class ManagerAgent:
             "planning requests), "
             "'system' (controls the laptop — opens Notepad, creates folders/files, opens/closes VS Code "
             "— use for any request to open, create, or close something on the computer), "
+
+            "'office' (creates Word documents, Excel sheets, or PowerPoint presentations on any topic "
+            "— use when the user asks to create/make a Word doc, Excel sheet, or PPT), "
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
@@ -170,6 +175,7 @@ class ManagerAgent:
             '["decision"]\n'
             '["factcheck"]\n'
             '["system"]\n'
+            '["office"]\n'
             
         )
         response = client.models.generate_content(
@@ -301,6 +307,11 @@ class ManagerAgent:
             elif step == "system":
                 print("💻 System control agent is working...")
                 draft = self.system.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "office":
+                print("📊 Office agent is working...")
+                draft = self.office.run(task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
