@@ -300,7 +300,7 @@ class ManagerAgent:
 
             elif step == "system":
                 print("💻 System control agent is working...")
-                draft = self.system.run(task)
+                draft = self.system.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

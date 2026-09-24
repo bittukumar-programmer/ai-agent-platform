@@ -46,9 +46,13 @@ def create_file(filename: str, folder_name: str = None, content: str = "") -> st
 
 
 def open_vscode(path: str = None) -> str:
-    """Opens VS Code, optionally at a specific folder/file path."""
+    """Opens VS Code, optionally at a specific folder/file path (relative to the workspace)."""
     try:
-        target = path if path else WORKSPACE
+        if path:
+            # If it's already a full path, use it directly; otherwise treat it as relative to workspace
+            target = path if os.path.isabs(path) else os.path.join(WORKSPACE, path)
+        else:
+            target = WORKSPACE
         subprocess.Popen(["code", target], shell=True)
         return f"Opened VS Code at {target}"
     except Exception as e:
@@ -62,3 +66,53 @@ def close_app(app_name: str) -> str:
         return f"Closed {app_name}"
     except Exception as e:
         return f"Error closing {app_name}: {e}"
+
+
+def open_app(app_name: str) -> str:
+    """Opens any application by its common name (Chrome, Calculator, WhatsApp, etc.)."""
+    # Common app name → actual Windows 'start' command mapping
+    app_map = {
+        "chrome": "chrome.exe",
+        "google chrome": "chrome.exe",
+        "calculator": "calc.exe",
+        "calc": "calc.exe",
+        "paint": "mspaint.exe",
+        "explorer": "explorer.exe",
+        "file explorer": "explorer.exe",
+        "whatsapp": "shell:AppsFolder\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App",
+        "word": "winword.exe",
+        "excel": "excel.exe",
+        "powerpoint": "powerpnt.exe",
+        "spotify": "spotify.exe",
+        "notepad": "notepad.exe",
+    }
+    try:
+        key = app_name.lower().strip()
+        command = app_map.get(key, app_name)
+        # 'start' is Windows's own reliable way to launch apps registered on the system
+        subprocess.Popen(f'start "" "{command}"', shell=True)
+        return f"Opened {app_name}"
+    except Exception as e:
+        return f"Error opening {app_name}: {e}"
+
+
+def open_folder_in_explorer(folder_path: str) -> str:
+    """Opens a folder in Windows File Explorer (relative to the AI workspace, or absolute)."""
+    try:
+        target = folder_path if os.path.isabs(folder_path) else os.path.join(WORKSPACE, folder_path)
+        os.makedirs(target, exist_ok=True)
+        subprocess.Popen(["explorer", target])
+        return f"Opened {target} in File Explorer"
+    except Exception as e:
+        return f"Error opening folder: {e}"
+
+
+def search_web(query: str) -> str:
+    """Opens the default browser with a Google search for the given query."""
+    try:
+        import webbrowser
+        url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
+        webbrowser.open(url)
+        return f"Searched for '{query}' in your browser"
+    except Exception as e:
+        return f"Error searching: {e}"

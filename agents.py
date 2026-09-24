@@ -4,8 +4,10 @@ from google import genai
 from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
-from system_control import open_notepad, create_folder, create_file, open_vscode, close_app
-
+from system_control import (
+    open_notepad, create_folder, create_file, open_vscode, close_app,
+    open_app, open_folder_in_explorer, search_web
+)
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -422,14 +424,19 @@ class SystemAgent(BaseAgent):
             role=(
                 "You control the user's laptop. Based on the request, decide which action to take: "
                 "open_notepad, create_folder, create_file, open_vscode, or close_app. "
+                "IMPORTANT: If the request uses words like 'this', 'that', 'ise', 'isko', or refers to "
+                "something from earlier in the conversation, look at the recent conversation history "
+                "provided to figure out the exact folder/file name that was mentioned before, and use it. "
+                "For open_vscode, if a specific folder was created or mentioned recently, use its full "
+                "path (e.g. 'AI_Workspace/Project X'), not just the base workspace.\n\n"
                 "Reply with ONLY a JSON object like: "
                 '{"action": "create_folder", "params": {"folder_name": "MyProjects"}}\n'
                 "Valid actions and their params:\n"
-                '- open_notepad: {"filename": "optional.txt"}\n'
-                '- create_folder: {"folder_name": "name"}\n'
-                '- create_file: {"filename": "name.txt", "folder_name": "optional", "content": "optional text"}\n'
-                '- open_vscode: {"path": "optional path"}\n'
+                '- open_vscode: {"path": "optional relative path like Project X"}\n'
                 '- close_app: {"app_name": "notepad.exe or Code.exe"}\n'
+                '- open_app: {"app_name": "chrome, calculator, whatsapp, word, excel, powerpoint, paint, spotify, etc."}\n'
+                '- open_folder_in_explorer: {"folder_path": "relative or absolute path"}\n'
+                '- search_web: {"query": "what to search"}\n'
                 "Reply with ONLY the JSON, nothing else."
             )
         )
@@ -458,6 +465,12 @@ class SystemAgent(BaseAgent):
                 return open_vscode(**params)
             elif action == "close_app":
                 return close_app(**params)
+            elif action == "open_app":
+                return open_app(**params)
+            elif action == "open_folder_in_explorer":
+                return open_folder_in_explorer(**params)
+            elif action == "search_web":
+                return search_web(**params)
             else:
                 return "I couldn't figure out which action to take."
         except Exception as e:
