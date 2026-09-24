@@ -4,7 +4,7 @@ from google import genai
 from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
-
+from system_control import open_notepad, create_folder, create_file, open_vscode, close_app
 
 
 load_dotenv()
@@ -414,6 +414,54 @@ class FactCheckAgent(BaseAgent):
                     return f"[Error: {self.name} could not get a response after {max_retries} attempts.]"
 
         return "[Unexpected error]"
+
+class SystemAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="System",
+            role=(
+                "You control the user's laptop. Based on the request, decide which action to take: "
+                "open_notepad, create_folder, create_file, open_vscode, or close_app. "
+                "Reply with ONLY a JSON object like: "
+                '{"action": "create_folder", "params": {"folder_name": "MyProjects"}}\n'
+                "Valid actions and their params:\n"
+                '- open_notepad: {"filename": "optional.txt"}\n'
+                '- create_folder: {"folder_name": "name"}\n'
+                '- create_file: {"filename": "name.txt", "folder_name": "optional", "content": "optional text"}\n'
+                '- open_vscode: {"path": "optional path"}\n'
+                '- close_app: {"app_name": "notepad.exe or Code.exe"}\n'
+                "Reply with ONLY the JSON, nothing else."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        """Figures out which system action to take, then actually performs it."""
+        import json
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=f"{self.role}\n\nUser request: {prompt}",
+        )
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+
+        try:
+            decision = json.loads(raw)
+            action = decision.get("action")
+            params = decision.get("params", {})
+
+            if action == "open_notepad":
+                return open_notepad(**params)
+            elif action == "create_folder":
+                return create_folder(**params)
+            elif action == "create_file":
+                return create_file(**params)
+            elif action == "open_vscode":
+                return open_vscode(**params)
+            elif action == "close_app":
+                return close_app(**params)
+            else:
+                return "I couldn't figure out which action to take."
+        except Exception as e:
+            return f"Error performing system action: {e}"
 
 class WriterAgent(BaseAgent):
     def __init__(self):

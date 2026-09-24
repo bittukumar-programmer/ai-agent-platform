@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from memory_store import save_memory, search_memory
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
+from agents import SystemAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent, PlannerAgent, InterviewCoachAgent, ResumeAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent, TranslatorAgent, SummarizerAgent
@@ -51,6 +52,14 @@ class ManagerAgent:
         self.travel = TravelAgent()
         self.decision = DecisionAgent()
         self.factcheck = FactCheckAgent()
+        self.system = SystemAgent()
+
+
+
+
+
+
+
     def _history_text(self, current_task: str = "") -> str:
         """Combines recent session context AND relevant long-term memories."""
         parts = []
@@ -114,6 +123,8 @@ class ManagerAgent:
             "requests), "
             "'travel' (suggests destinations, itineraries, or travel tips — use for trip/vacation "
             "planning requests), "
+            "'system' (controls the laptop — opens Notepad, creates folders/files, opens/closes VS Code "
+            "— use for any request to open, create, or close something on the computer), "
              
             "'datetime' (gets the current real date and time, use ONLY when the user asks about today's date, current time, or day of the week), "
             "'write' (turns facts into a paragraph), "
@@ -158,6 +169,7 @@ class ManagerAgent:
             '["travel"]\n'
             '["decision"]\n'
             '["factcheck"]\n'
+            '["system"]\n'
             
         )
         response = client.models.generate_content(
@@ -282,6 +294,13 @@ class ManagerAgent:
             elif step == "decision":
                 print("🤔 Decision helper is working...")
                 draft = self.decision.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+
+
+            elif step == "system":
+                print("💻 System control agent is working...")
+                draft = self.system.run(task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
