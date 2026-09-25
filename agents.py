@@ -6,10 +6,13 @@ from datetime import datetime
 from google.genai import types
 
 
+
+
 from system_control import (
     open_notepad, create_folder, create_file, open_vscode, close_app,
     open_app, open_folder_in_explorer, search_web,
-    create_word_doc, create_excel_sheet, create_powerpoint, open_file
+    create_word_doc, create_excel_sheet, create_powerpoint, open_file,
+    send_whatsapp_message
 )
 
 
@@ -445,6 +448,9 @@ class SystemAgent(BaseAgent):
                 '- search_web: {"query": "what to search"}\n'
                 '- open_file: {"file_path": "relative filename like solar_system.pptx"}\n'
                 "Reply with ONLY the JSON, nothing else."
+                '- open_file: {"file_path": "relative filename like solar_system.pptx"}\n'
+                '- send_whatsapp_message: {"phone_number": "+91XXXXXXXXXX", "message": "the message text"}\n'
+                "Reply with ONLY the JSON, nothing else."
             )
         )
 
@@ -482,6 +488,10 @@ class SystemAgent(BaseAgent):
                 return search_web(**params)
             elif action == "open_file":
                 return open_file(**params)
+            elif action == "open_file":
+                return open_file(**params)
+            elif action == "send_whatsapp_message":
+                return send_whatsapp_message(**params)
             else:
                 return "I couldn't figure out which action to take."
         except Exception as e:

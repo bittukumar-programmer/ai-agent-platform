@@ -4,6 +4,7 @@ from docx import Document
 from openpyxl import Workbook
 from pptx import Presentation
 from pptx.util import Inches
+import pywhatkit
 
 # Base folder where the assistant will create files/folders, to keep things safe and organized
 WORKSPACE = os.path.join(os.path.expanduser("~"), "Desktop", "AI_Workspace")
@@ -196,3 +197,17 @@ def open_file(file_path: str) -> str:
         return f"Opened {target}"
     except Exception as e:
         return f"Error opening file: {e}"
+
+
+def send_whatsapp_message(phone_number: str, message: str) -> str:
+    """Sends a WhatsApp message instantly via WhatsApp Web (must be logged in already)."""
+    try:
+        import pyautogui
+        import time
+
+        pywhatkit.sendwhatmsg_instantly(phone_number, message, wait_time=20, tab_close=False)
+        time.sleep(3)  # extra safety pause so the page fully loads
+        pyautogui.press("enter")  # manually press Enter to actually send
+        return f"Sent WhatsApp message to {phone_number}: '{message}'"
+    except Exception as e:
+        return f"Error sending WhatsApp message: {e}"
