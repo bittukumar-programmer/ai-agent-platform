@@ -1,7 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from memory_store import save_memory, search_memory
+from memory_store import save_memory, search_memory, get_recent_memories
 from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, CodeAgent, MathAgent
 from google import genai
 from agents import SystemAgent
@@ -189,6 +189,31 @@ class ManagerAgent:
         except json.JSONDecodeError:
             steps = ["research", "write", "review"]
         return steps
+
+
+    def proactive_check(self) -> str:
+        """Looks at recent memory and decides if there's something worth proactively mentioning."""
+        recent = get_recent_memories(5)
+        if not recent:
+            return ""
+
+        memory_text = "\n\n".join(recent)
+        prompt = (
+            "You are reviewing recent conversation history with a user to decide if there's a natural, "
+            "helpful proactive follow-up to bring up right now — for example, an unfinished task they "
+            "mentioned, something they said they'd do 'later' or 'kal', or a reminder that would genuinely "
+            "help them. Be conservative — most of the time there's nothing worth bringing up.\n\n"
+            f"Recent history:\n{memory_text}\n\n"
+            "If there's something worth mentioning, reply with a short, natural, friendly one-line message "
+            "(in the same language style as the history). If there's nothing worth bringing up, reply with "
+            "EXACTLY: NOTHING"
+        )
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=prompt,
+        )
+        result = response.text.strip()
+        return "" if result == "NOTHING" else result
 
     def execute(self, task: str, steps: list = None, image=None):
         if steps is None:

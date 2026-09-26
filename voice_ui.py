@@ -38,7 +38,7 @@ class VoiceAssistantUI:
         self.manager = ManagerAgent()
 
         self.root.after(100, self.setup_visuals)
-        threading.Thread(target=self.voice_loop, daemon=True).start()
+        threading.Thread(target=self.startup_sequence, daemon=True).start()
 
     def setup_visuals(self):
         self.canvas.update()
@@ -100,6 +100,16 @@ class VoiceAssistantUI:
             self.canvas.coords(ring, self.cx - size, self.cy - size, self.cx + size, self.cy + size)
 
         self.root.after(30, self.animate)
+
+
+    def startup_sequence(self):
+        """Checks for anything proactive to mention before starting the normal listen loop."""
+        self.set_state("thinking", "Checking recent context...")
+        proactive_message = self.manager.proactive_check()
+        if proactive_message:
+            self.set_state("speaking", "Proactive reminder")
+            speak(proactive_message)
+        self.voice_loop()
 
     def voice_loop(self):
         while True:

@@ -47,3 +47,15 @@ def search_memory(query: str, n_results: int = 4) -> list:
         n_results=min(n_results, collection.count()),
     )
     return results["documents"][0] if results["documents"] else []
+
+
+
+def get_recent_memories(n: int = 5) -> list:
+    """Fetches the N most recent memories directly (not by search, just by recency)."""
+    total = collection.count()
+    if total == 0:
+        return []
+    start = max(0, total - n)
+    ids = [str(i) for i in range(start, total)]
+    result = collection.get(ids=ids)
+    return result["documents"] if result["documents"] else []
