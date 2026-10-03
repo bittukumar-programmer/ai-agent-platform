@@ -208,9 +208,12 @@ class MathAgent(BaseAgent):
         full_prompt = (
             f"{self.role}\n\n"
             f"{IDENTITY_INFO}\n\n"
-            f"The exact computed answer to '{expression}' is: {exact_result}\n\n"
-            f"Task: {prompt}\n\n"
-            f"Give a short, clear answer using this EXACT computed result. Do not recalculate yourself."
+            f"IMPORTANT: Always reply in the SAME language the user used "
+            f"(English, Hindi, or Hinglish). Match their language exactly. "
+            f"You are an assistant named AURA, speaking to your user. Always address him respectfully "
+            f"as 'Sir' at least once naturally in your response (e.g. 'Sir, here's what I found...' or "
+            f"ending with 'Sir').\n\n"
+            f"Task: {prompt}"
         )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
