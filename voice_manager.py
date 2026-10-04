@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import wave
 import asyncio
@@ -15,7 +16,7 @@ import tempfile
 
 voice_encoder = VoiceEncoder()
 MY_VOICE_PROFILE = np.load("voice_profile.npy")
-VOICE_MATCH_THRESHOLD = 0.72
+VOICE_MATCH_THRESHOLD = 0.65
 
 from playsound3 import playsound
 
@@ -50,11 +51,26 @@ async def _generate_speech(text: str, path: str):
     await communicate.save(path)
 
 
+def clean_for_speech(text: str) -> str:
+    """Removes markdown symbols and other characters that shouldn't be spoken aloud."""
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)   # **bold** → bold
+    text = re.sub(r"\*(.*?)\*", r"\1", text)        # *italic* → italic
+    text = re.sub(r"#+\s*", "", text)               # remove markdown headings (#, ##, ###)
+    text = re.sub(r"`(.*?)`", r"\1", text)           # `code` → code
+    text = re.sub(r"[_~]", "", text)                 # remove underscores, tildes
+    text = re.sub(r"^\s*[-*]\s+", "", text, flags=re.MULTILINE)  # remove bullet point markers
+    text = re.sub(r"\n+", ". ", text)                # newlines → pause-like period
+    return text.strip()
+
+
+
+
 def speak(text: str):
     """Converts text to natural speech using free, unlimited Edge TTS and plays it."""
     try:
+        clean_text = clean_for_speech(text)
         wav_path = "temp_response.mp3"
-        asyncio.run(_generate_speech(text, wav_path))
+        asyncio.run(_generate_speech(clean_text, wav_path))
         playsound(wav_path)
     except Exception as e:
         print(f"⚠️ TTS error, falling back to offline voice: {e}")
