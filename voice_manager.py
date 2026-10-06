@@ -16,7 +16,7 @@ import tempfile
 
 voice_encoder = VoiceEncoder()
 MY_VOICE_PROFILE = np.load("voice_profile.npy")
-VOICE_MATCH_THRESHOLD = 0.65
+VOICE_MATCH_THRESHOLD = 0.70
 
 from playsound3 import playsound
 
