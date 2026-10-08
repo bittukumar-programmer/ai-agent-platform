@@ -16,7 +16,7 @@ import tempfile
 
 voice_encoder = VoiceEncoder()
 MY_VOICE_PROFILE = np.load("voice_profile.npy")
-VOICE_MATCH_THRESHOLD = 0.70
+VOICE_MATCH_THRESHOLD = 0.60
 
 from playsound3 import playsound
 
@@ -136,8 +136,7 @@ def listen_once(timeout=6, phrase_time_limit=8) -> str:
         return ""
 
 
-WAKE_WORD_VARIANTS = ["aura", "ora", "arrow", "aurora", "ura", "howrah", "aara", "aira", "ara", "era"]
-
+WAKE_WORD_VARIANTS = ["hello", "aura", "ora", "arrow", "aurora", "ura", "howrah", "aara", "aira", "ara", "era"]
 def wait_for_wake_word():
     """Quietly listens until the wake word is heard. Keeps the mic open the whole time for instant response."""
     print(f"\n💤 Sleeping... (say '{WAKE_WORD}' to wake me up)")

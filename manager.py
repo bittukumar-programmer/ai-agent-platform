@@ -69,8 +69,9 @@ class ManagerAgent:
         if self.history:
             lines = []
             for i, turn in enumerate(self.history[-3:], 1):
+                safe_result = turn.get('result') or ""  # treat None/missing as empty string
                 lines.append(f"Turn {i} - User asked: {turn['task']}")
-                lines.append(f"Turn {i} - Result: {turn['result'][:300]}")
+                lines.append(f"Turn {i} - Result: {safe_result[:300]}")
             parts.append("Recent conversation:\n" + "\n".join(lines))
 
         if current_task:
@@ -193,20 +194,24 @@ class ManagerAgent:
 
     def proactive_check(self) -> str:
         """Looks at recent memory and decides if there's something worth proactively mentioning."""
-        recent = get_recent_memories(5)
+        from agents import get_current_datetime
+        recent = get_recent_memories(8)
         if not recent:
             return ""
 
         memory_text = "\n\n".join(recent)
+        current_time = get_current_datetime()
         prompt = (
             "You are reviewing recent conversation history with a user to decide if there's a natural, "
-            "helpful proactive follow-up to bring up right now — for example, an unfinished task they "
-            "mentioned, something they said they'd do 'later' or 'kal', or a reminder that would genuinely "
-            "help them. Be conservative — most of the time there's nothing worth bringing up.\n\n"
+            "helpful proactive thing to say right now — for example, an unfinished task they mentioned, "
+            "something they said they'd do 'later' or 'kal', a recurring habit at this time of day based "
+            "on the history (e.g. they usually ask for a news summary around this time), or a genuinely "
+            "useful reminder. Be conservative — most of the time there's nothing worth bringing up.\n\n"
+            f"Current time: {current_time}\n\n"
             f"Recent history:\n{memory_text}\n\n"
             "If there's something worth mentioning, reply with a short, natural, friendly one-line message "
-            "(in the same language style as the history). If there's nothing worth bringing up, reply with "
-            "EXACTLY: NOTHING"
+            "addressing him as 'Sir' (in the same language style as the history). If there's nothing worth "
+            "bringing up, reply with EXACTLY: NOTHING"
         )
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
@@ -346,12 +351,14 @@ class ManagerAgent:
 
             elif step == "review":
                 print("🔎 Reviewer is working...")
-                draft = self.reviewer.run(
+                reviewed = self.reviewer.run(
                     f"Topic: {context_task}\nDraft:\n{draft}\n\n"
                     f"Improve this for accuracy, clarity, and flow. "
                     f"Reply with ONLY the final improved paragraph. "
                     f"Do NOT include any feedback, headings, explanations, or commentary."
                 )
+                if reviewed:  # only overwrite the draft if the reviewer actually returned something
+                    draft = reviewed
                 print(f"Reviewed:\n{draft}\n")
 
                         # Fallback: if no steps were needed (e.g. simple greeting), just respond directly

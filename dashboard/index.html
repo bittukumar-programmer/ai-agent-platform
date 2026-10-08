@@ -1,0 +1,791 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA // Multi-Agent AI Cooperative Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Core Theme Colors */
+            --bg-color: #02050a;
+            --primary: #00f3ff;
+            --primary-dim: rgba(0, 243, 255, 0.2);
+            --secondary: #ffaa00;
+            --secondary-dim: rgba(255, 170, 0, 0.2);
+            --text-main: #eef0f6;
+            --text-muted: #5e8a99;
+            --panel-bg: rgba(2, 10, 20, 0.7);
+            --panel-border: rgba(0, 243, 255, 0.3);
+            --alert: #ff3366;
+            
+            /* Orb States */
+            --idle: #00f3ff;
+            --listening: #2dd4bf;
+            --thinking: #ffaa00;
+            --speaking: #0077ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-main);
+            font-family: 'Share Tech Mono', monospace;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-wrapper {
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            grid-template-rows: 80px 1fr 220px;
+            gap: 20px;
+            padding: 20px;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* HUD Panels Common Styles */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            position: relative;
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05);
+        }
+
+        /* Decorative Corners */
+        .panel::before, .panel::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 2px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        .panel-header {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--primary);
+            border-bottom: 1px solid var(--primary-dim);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Header Area */
+        .header-area {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary);
+            letter-spacing: 5px;
+            line-height: 1;
+        }
+
+        .logo-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            letter-spacing: 4px;
+            margin-top: 5px;
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Left Panel - Agents */
+        .left-panel {
+            grid-column: 1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        .left-panel::-webkit-scrollbar { display: none; }
+
+        .agent-card {
+            border: 1px solid var(--primary-dim);
+            background: rgba(0, 243, 255, 0.02);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .agent-card.active {
+            border-color: var(--primary);
+            background: rgba(0, 243, 255, 0.08);
+            box-shadow: 0 0 15px var(--primary-dim);
+        }
+
+        .agent-card.thinking-agent {
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px var(--secondary-dim);
+        }
+
+        .agent-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .agent-name { font-weight: bold; }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            box-shadow: 0 0 5px var(--text-muted);
+        }
+        .agent-card.active .status-dot { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        .agent-card.thinking-agent .status-dot { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
+
+        .agent-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #111;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .agent-card.thinking-agent .progress-fill { background: var(--secondary); }
+
+        /* Fake Node Graph */
+        .node-graph {
+            height: 40px;
+            width: 100%;
+            border-top: 1px dashed var(--primary-dim);
+            margin-top: 5px;
+            position: relative;
+        }
+        .node {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        /* Right Panel - Analytics */
+        .right-panel {
+            grid-column: 3;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-container {
+            height: 120px;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--primary-dim);
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--primary);
+            opacity: 0.7;
+            transition: height 0.2s ease;
+            box-shadow: 0 0 5px var(--primary-dim);
+        }
+
+        .brain-svg {
+            width: 100%;
+            height: 150px;
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 1;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 5px var(--primary));
+            animation: pulse-brain 4s infinite alternate;
+        }
+
+        @keyframes pulse-brain {
+            0% { opacity: 0.6; filter: drop-shadow(0 0 2px var(--primary)); }
+            100% { opacity: 1; filter: drop-shadow(0 0 8px var(--primary)); }
+        }
+
+        /* Bottom Row */
+        .bottom-left {
+            grid-column: 1 / 3;
+            grid-row: 3;
+            overflow: hidden;
+        }
+        .bottom-right {
+            grid-column: 3;
+            grid-row: 3;
+        }
+
+        .terminal-log {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .terminal-log::-webkit-scrollbar { width: 4px; }
+        .terminal-log::-webkit-scrollbar-thumb { background: var(--primary-dim); }
+
+        .log-line { display: flex; gap: 10px; }
+        .log-time { color: var(--text-muted); }
+        .log-source { color: var(--secondary); font-weight: bold; width: 60px; }
+        .log-msg { color: var(--text-main); }
+        .log-line.system .log-source { color: var(--alert); }
+        .log-line.aura .log-source { color: var(--primary); }
+
+        .diag-list {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .diag-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding: 2px 0;
+        }
+        .diag-ok { color: var(--listening); }
+        
+        /* Center Area - The Orb */
+        .center-panel {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .orb-wrapper {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+        }
+
+        /* Rings */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid var(--idle);
+            opacity: 0.6;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 15px inset var(--idle), 0 0 20px var(--idle);
+            transition: border-color 0.5s, box-shadow 0.5s;
+        }
+
+        .ring-1 {
+            width: 380px; height: 380px;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+            animation: rotateX 12s linear infinite;
+        }
+        .ring-2 {
+            width: 320px; height: 320px;
+            border-left: 2px solid transparent;
+            border-right: 2px solid transparent;
+            animation: rotateY 8s linear infinite reverse;
+        }
+        .ring-3 {
+            width: 260px; height: 260px;
+            border: 1px dashed var(--idle);
+            animation: rotateZ 20s linear infinite;
+        }
+        .ring-4 {
+            width: 200px; height: 200px;
+            border: 3px solid var(--idle);
+            opacity: 0.3;
+            animation: rotateX 6s linear infinite, rotateY 10s linear infinite;
+        }
+
+        /* Core */
+        .orb-core {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffffff, var(--idle) 40%, transparent 80%);
+            box-shadow: 0 0 50px var(--idle), 0 0 100px var(--idle), inset 0 0 30px #fff;
+            transition: background 0.5s, box-shadow 0.5s;
+            animation: pulse-core 3s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        /* Equator Wave */
+        .equator-wave {
+            position: absolute;
+            width: 450px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            z-index: 6;
+        }
+        .wave-bar {
+            width: 3px;
+            background: var(--idle);
+            box-shadow: 0 0 10px var(--idle);
+            border-radius: 3px;
+            transition: background 0.5s, box-shadow 0.5s;
+        }
+
+        /* Status Text below Orb */
+        .orb-status {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .status-text {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.8rem;
+            color: var(--idle);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--idle);
+            transition: color 0.5s, text-shadow 0.5s;
+        }
+        .sub-status {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        /* Animations */
+        @keyframes rotateX {
+            0% { transform: rotateX(0deg) rotateY(45deg); }
+            100% { transform: rotateX(360deg) rotateY(45deg); }
+        }
+        @keyframes rotateY {
+            0% { transform: rotateY(0deg) rotateX(45deg) rotateZ(15deg); }
+            100% { transform: rotateY(360deg) rotateX(45deg) rotateZ(15deg); }
+        }
+        @keyframes rotateZ {
+            0% { transform: rotateZ(0deg); }
+            100% { transform: rotateZ(360deg); }
+        }
+        @keyframes pulse-core {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.3); }
+        }
+        
+        /* Grid Overlay */
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+
+    <div class="hud-wrapper">
+        
+        <!-- HEADER -->
+        <header class="header-area">
+            <div class="logo-title">AURA</div>
+            <div class="logo-subtitle">MULTI-AGENT AI COOPERATIVE ASSISTANT</div>
+        </header>
+
+        <!-- LEFT PANEL: Agents -->
+        <aside class="panel left-panel">
+            <div class="panel-header">
+                <span>ACTIVE AGENTS</span>
+                <span style="font-size: 0.8rem; opacity: 0.7;">SYS.VOL: 4</span>
+            </div>
+            
+            <div class="agent-card active" id="agent-strategist">
+                <div class="agent-card-header">
+                    <span class="agent-name">ALPHA - STRATEGIST</span>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row"><span>COGNITIVE LOAD</span><span class="val">24%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 24%;"></div></div>
+                </div>
+                <div class="node-graph" id="graph-alpha"></div>
+            </div>
+
+            <div class="agent-card" id="agent-analytics">
+                <div class="agent-card-header">
+                    <span class="agent-name">BETA - ANALYTICS</span>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row"><span>DATA PARSING</span><span class="val">89%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 89%;"></div></div>
+                </div>
+                <div class="node-graph" id="graph-beta"></div>
+            </div>
+
+            <div class="agent-card" id="agent-research">
+                <div class="agent-card-header">
+                    <span class="agent-name">GAMMA - RESEARCH</span>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row"><span>SYNTHESIS</span><span class="val">12%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 12%;"></div></div>
+                </div>
+                <div class="node-graph" id="graph-gamma"></div>
+            </div>
+
+            <div class="agent-card" id="agent-operations">
+                <div class="agent-card-header">
+                    <span class="agent-name">DELTA - OPERATIONS</span>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="agent-metrics">
+                    <div class="metric-row"><span>EXECUTION</span><span class="val">5%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 5%;"></div></div>
+                </div>
+                <div class="node-graph" id="graph-delta"></div>
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL: The Orb -->
+        <main class="center-panel">
+            <div class="orb-wrapper">
+                <div class="ring ring-1" id="r1"></div>
+                <div class="ring ring-2" id="r2"></div>
+                <div class="ring ring-3" id="r3"></div>
+                <div class="ring ring-4" id="r4"></div>
+                <div class="orb-core" id="core"></div>
+                <div class="equator-wave" id="equator">
+                    <!-- Bars injected via JS -->
+                </div>
+            </div>
+            
+            <div class="orb-status">
+                <div class="status-text" id="status-text">SYSTEM IDLE</div>
+                <div class="sub-status" id="sub-status">AWAITING INPUT...</div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL: Network/Cognitive -->
+        <aside class="panel right-panel">
+            <div class="panel-header">
+                <span>NEURAL NETWORK</span>
+                <span style="font-size: 0.8rem; opacity: 0.7;">OPTIMAL</span>
+            </div>
+            
+            <div style="padding: 10px; text-align: center;">
+                <svg class="brain-svg" viewBox="0 0 100 100">
+                    <!-- Faux neural net SVG -->
+                    <circle cx="50" cy="20" r="3"/>
+                    <circle cx="30" cy="40" r="3"/>
+                    <circle cx="70" cy="40" r="3"/>
+                    <circle cx="20" cy="65" r="3"/>
+                    <circle cx="50" cy="65" r="3"/>
+                    <circle cx="80" cy="65" r="3"/>
+                    <circle cx="50" cy="90" r="3"/>
+                    
+                    <line x1="50" y1="20" x2="30" y2="40"/>
+                    <line x1="50" y1="20" x2="70" y2="40"/>
+                    <line x1="30" y1="40" x2="20" y2="65"/>
+                    <line x1="30" y1="40" x2="50" y2="65"/>
+                    <line x1="70" y1="40" x2="50" y2="65"/>
+                    <line x1="70" y1="40" x2="80" y2="65"/>
+                    <line x1="20" y1="65" x2="50" y2="90"/>
+                    <line x1="50" y1="65" x2="50" y2="90"/>
+                    <line x1="80" y1="65" x2="50" y2="90"/>
+                </svg>
+            </div>
+
+            <div class="panel-header" style="margin-top: 10px;">
+                <span>COGNITIVE LOAD</span>
+                <span style="font-size: 0.8rem; opacity: 0.7;" id="cog-load-txt">42%</span>
+            </div>
+            <div class="chart-container" id="load-chart">
+                <!-- Bars injected via JS -->
+            </div>
+        </aside>
+
+        <!-- BOTTOM LEFT: Terminal -->
+        <footer class="panel bottom-left">
+            <div class="panel-header">
+                <span>TERMINAL // COMMS</span>
+                <span style="font-size: 0.8rem; opacity: 0.7;">LIVE</span>
+            </div>
+            <div class="terminal-log" id="terminal-log">
+                <!-- Log entries injected via JS -->
+            </div>
+        </footer>
+
+        <!-- BOTTOM RIGHT: Diagnostics -->
+        <footer class="panel bottom-right">
+            <div class="panel-header">
+                <span>DIAGNOSTICS</span>
+            </div>
+            <div class="diag-list">
+                <div class="diag-item"><span>CORE KERNEL</span><span class="diag-ok">ONLINE</span></div>
+                <div class="diag-item"><span>MEMORY ALLOCATION</span><span class="diag-ok">STABLE</span></div>
+                <div class="diag-item"><span>QUANTUM ENCRYPTION</span><span class="diag-ok">ACTIVE</span></div>
+                <div class="diag-item"><span>LATENCY</span><span style="color: var(--primary);">12ms</span></div>
+                <div class="diag-item"><span>API GATEWAYS</span><span class="diag-ok">CONNECTED</span></div>
+                <div class="diag-item"><span>AGENT SYNC</span><span class="diag-ok">VERIFIED</span></div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // Data and Constants
+        const COLORS = {
+            idle: "var(--idle)",
+            listening: "var(--listening)",
+            thinking: "var(--thinking)",
+            speaking: "var(--speaking)"
+        };
+
+        const STATE_LABELS = {
+            idle: "SYSTEM IDLE",
+            listening: "LISTENING...",
+            thinking: "PROCESSING...",
+            speaking: "RESPONDING"
+        };
+
+        const SUB_LABELS = {
+            idle: "AWAITING INPUT...",
+            listening: "AUDIO CHANNEL OPEN",
+            thinking: "MULTI-AGENT SYNC IN PROGRESS",
+            speaking: "TRANSMITTING DATA"
+        };
+
+        // DOM Elements
+        const orbCore = document.getElementById('core');
+        const rings = [
+            document.getElementById('r1'),
+            document.getElementById('r2'),
+            document.getElementById('r3'),
+            document.getElementById('r4')
+        ];
+        const equator = document.getElementById('equator');
+        const statusText = document.getElementById('status-text');
+        const subStatusText = document.getElementById('sub-status');
+        const terminalLog = document.getElementById('terminal-log');
+        const loadChart = document.getElementById('load-chart');
+        
+        let waveBars = [];
+        let currentState = 'idle';
+
+        // Initialize Equator Wave
+        function initEquator() {
+            const numBars = 60;
+            for(let i=0; i<numBars; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'wave-bar';
+                // Calculate height based on a sine wave for initial look
+                let h = Math.sin(i/numBars * Math.PI) * 20 + 5;
+                bar.style.height = `${h}px`;
+                equator.appendChild(bar);
+                waveBars.push(bar);
+            }
+        }
+
+        // Initialize Cognitive Load Chart
+        function initChart() {
+            const numBars = 40;
+            for(let i=0; i<numBars; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${Math.random() * 80 + 10}%`;
+                loadChart.appendChild(bar);
+            }
+            
+            // Animate chart
+            setInterval(() => {
+                const bars = loadChart.children;
+                for(let i=0; i<bars.length; i++) {
+                    let newHeight = parseFloat(bars[i].style.height) + (Math.random() * 20 - 10);
+                    newHeight = Math.max(10, Math.min(100, newHeight));
+                    bars[i].style.height = `${newHeight}%`;
+                }
+                document.getElementById('cog-load-txt').innerText = `${Math.floor(Math.random() * 30 + 30)}%`;
+            }, 500);
+        }
+
+        // Fake node graphs on agents
+        function drawFauxNodes() {
+            const graphs = document.querySelectorAll('.node-graph');
+            graphs.forEach(g => {
+                for(let i=0; i<5; i++) {
+                    const node = document.createElement('div');
+                    node.className = 'node';
+                    node.style.left = `${Math.random() * 90}%`;
+                    node.style.top = `${Math.random() * 30}px`;
+                    g.appendChild(node);
+                }
+            });
+        }
+
+        function setOrbState(state) {
+            currentState = state;
+            const color = COLORS[state];
+            
+            // Update Core
+            orbCore.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${color} 40%, transparent 80%)`;
+            orbCore.style.boxShadow = `0 0 50px ${color}, 0 0 100px ${color}, inset 0 0 30px #fff`;
+            
+            // Update Rings
+            rings.forEach(r => {
+                r.style.borderColor = color;
+                r.style.boxShadow = `0 0 15px inset ${color}, 0 0 20px ${color}`;
+            });
+
+            // Update Wave
+            waveBars.forEach(b => {
+                b.style.background = color;
+                b.style.boxShadow = `0 0 10px ${color}`;
+            });
+
+            // Update Text
+            statusText.innerText = STATE_LABELS[state];
+            statusText.style.color = color;
+            statusText.style.textShadow = `0 0 10px ${color}`;
+            subStatusText.innerText = SUB_LABELS[state];
+        }
+
+        function animateWave() {
+            let time = Date.now() / 1000;
+            waveBars.forEach((bar, i) => {
+                let multiplier = 1;
+                if(currentState === 'speaking') multiplier = 3;
+                if(currentState === 'thinking') multiplier = 1.5;
+                if(currentState === 'listening') multiplier = 2;
+                
+                let noise = Math.random() * 10 * (currentState === 'speaking' ? 2 : 0.5);
+                let h = Math.sin(i/waveBars.length * Math.PI + time * 5) * (15 * multiplier) + 15 + noise;
+                bar.style.height = `${Math.max(3, h)}px`;
+            });
+            requestAnimationFrame(animateWave);
+        }
+
+        function getTimestamp() {
+            const now = new Date();
+            return `[${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}.${now.getMilliseconds().toString().padStart(3,'0')}]`;
+        }
+
+        function addLog(source, msg) {
+            const line = document.createElement('div');
+            line.className = `log-line ${source.toLowerCase()}`;
+            line.innerHTML = `
+                <span class="log-time">${getTimestamp()}</span>
+                <span class="log-source">${source}</span>
+                <span class="log-msg">${msg}</span>
+            `;
+            terminalLog.appendChild(line);
+            terminalLog.scrollTop = terminalLog.scrollHeight;
+            
+            // Keep max 50 lines
+            if(terminalLog.children.length > 50) {
+                terminalLog.removeChild(terminalLog.firstChild);
+            }
+        }
+
+        function setAgentActive(id, state) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.classList.remove('active', 'thinking-agent');
+                if(state === 'active') el.classList.add('active');
+                if(state === 'thinking') el.classList.add('thinking-agent');
+                
+                // randomize progress bar slightly
+                const fill = el.querySelector('.progress-fill');
+                if(fill) {
+                    fill.style.width = `${Math.random() * 60 + 20}%`;
+                    el.querySelector('.val').innerText = fill.style.width.split('.')[0] + '%';
+                }
+            }
+        }
+
+        // Initialize setup
+        initEquator();
+        initChart();
+        drawFauxNodes();
+        animateWave();
+        addLog('SYSTEM', 'AURA Core Orchestrator Online.');
+        addLog('SYSTEM', 'Connecting to agent swarm...');
+        addLog('AURA', 'All systems nominal. Ready for queries.');
+
+         
+
+    </script>
+</body>
+</html>
