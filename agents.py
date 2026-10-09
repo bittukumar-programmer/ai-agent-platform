@@ -4,7 +4,7 @@ from google import genai
 from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
-from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube
+from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube, click_first_youtube_result
 
 
 
@@ -522,6 +522,9 @@ class BrowserAgent(BaseAgent):
                 '- read_page_text: {} (reads the current page to answer a question about it)\n'
                  '- read_page_text: {} (reads the current page to answer a question about it)\n'
                 '- search_youtube: {"query": "what to search"} (use when the request mentions YouTube specifically)\n'
+
+                '- search_youtube: {"query": "what to search"} (use when the request mentions YouTube specifically)\n'
+                '- click_first_youtube_result: {} (use this to play/open the first video after a YouTube search, instead of click_text)\n'
                 "Reply with ONLY the JSON, nothing else."
 
             )
@@ -561,6 +564,10 @@ class BrowserAgent(BaseAgent):
                 return type_text(**params)
             elif action == "read_page_text":
                 return read_page_text()
+            elif action == "search_youtube":
+                return search_youtube(**params)
+            elif action == "click_first_youtube_result":
+                return click_first_youtube_result()
             else:
                 return "I couldn't figure out which browser action to take."
         except Exception as e:
