@@ -4,6 +4,7 @@ from google import genai
 from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
+from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube
 
 
 
@@ -500,6 +501,70 @@ class SystemAgent(BaseAgent):
         except Exception as e:
             return f"Error performing system action: {e}"
 
+
+
+class BrowserAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="Browser",
+            role=(
+                "You control a web browser. Based on the request, decide which single action to take: "
+                "open_url, search_google, click_text, type_text, or read_page_text. "
+                'Reply with ONLY a JSON object like: {"action": "open_url", "params": {"url": "youtube.com"}}\n'
+                'or: {"action": "search_google", "params": {"query": "python tutorials"}}\n'
+                "IMPORTANT: Every action's params must be fully filled in based on the user's exact request — "
+                "never leave a required param empty or missing.\n"
+                "Valid actions and params:\n"
+                '- open_url: {"url": "the website to open"}\n'
+                '- search_google: {"query": "what to search"}\n'
+                '- click_text: {"text": "visible text of the thing to click"}\n'
+                '- type_text: {"placeholder_or_label": "field hint", "value": "what to type"}\n'
+                '- read_page_text: {} (reads the current page to answer a question about it)\n'
+                 '- read_page_text: {} (reads the current page to answer a question about it)\n'
+                '- search_youtube: {"query": "what to search"} (use when the request mentions YouTube specifically)\n'
+                "Reply with ONLY the JSON, nothing else."
+
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        import json
+
+        def get_decision(extra_note=""):
+            response = client.models.generate_content(
+                model="gemini-flash-lite-latest",
+                contents=f"{self.role}\n\n{extra_note}User request: {prompt}",
+            )
+            raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+            return json.loads(raw)
+
+        try:
+            decision = get_decision()
+            action = decision.get("action")
+            params = decision.get("params", {})
+
+            # If any required param is empty, retry once with a stronger reminder
+            if action in ["search_google", "search_youtube"] and not params.get("query"):
+                decision = get_decision("REMINDER: you forgot to fill in the 'query' param last time. ")
+                action = decision.get("action")
+                params = decision.get("params", {})
+
+            if action == "open_url":
+                return open_url(**params)
+            elif action == "search_google":
+                return search_google(**params)
+            elif action == "search_youtube":
+                return search_youtube(**params)
+            elif action == "click_text":
+                return click_text(**params)
+            elif action == "type_text":
+                return type_text(**params)
+            elif action == "read_page_text":
+                return read_page_text()
+            else:
+                return "I couldn't figure out which browser action to take."
+        except Exception as e:
+            return f"Error performing browser action: {e}"
 
 class OfficeAgent(BaseAgent):
     def __init__(self):

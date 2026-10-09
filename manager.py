@@ -23,6 +23,7 @@ from agents import ResearcherAgent, WriterAgent, ReviewerAgent, CreativeAgent, C
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 from agents import get_current_datetime, generate_image
+from agents import SystemAgent, OfficeAgent, BrowserAgent
 
 
 class ManagerAgent:
@@ -55,6 +56,7 @@ class ManagerAgent:
         self.factcheck = FactCheckAgent()
         self.system = SystemAgent()
         self.office = OfficeAgent()
+        self.browser = BrowserAgent()
 
 
 
@@ -94,6 +96,9 @@ class ManagerAgent:
             "Available agents: 'research' (gathers facts, use for general knowledge questions), "
             "'creative' (writes original stories, poems, jokes, playful roasts, or emotional/motivational "
             "messages — use for entertainment or creative requests, NOT factual ones), "
+
+            "'browser' (controls a web browser — opens websites, clicks things, types into fields, "
+            "reads page content — use for browsing tasks, filling forms, or navigating specific sites), "
 
             "'creative' (writes original stories, poems, jokes, playful roasts, or emotional/motivational "
             "messages — use for entertainment or creative requests, NOT factual ones), "
@@ -177,6 +182,8 @@ class ManagerAgent:
             '["factcheck"]\n'
             '["system"]\n'
             '["office"]\n'
+            '["browser"]\n'
+            '["browser"]\n'
             
         )
         response = client.models.generate_content(
@@ -342,6 +349,11 @@ class ManagerAgent:
             elif step == "office":
                 print("📊 Office agent is working...")
                 draft = self.office.run(task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "browser":
+                print("🌐 Browser agent is working...")
+                draft = self.browser.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":
