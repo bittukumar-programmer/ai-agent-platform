@@ -24,6 +24,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 from agents import get_current_datetime, generate_image
 from agents import SystemAgent, OfficeAgent, BrowserAgent
+from agents import SystemAgent, OfficeAgent, BrowserAgent, WhatsAppAgent
 
 
 class ManagerAgent:
@@ -57,6 +58,7 @@ class ManagerAgent:
         self.system = SystemAgent()
         self.office = OfficeAgent()
         self.browser = BrowserAgent()
+        self.whatsapp = WhatsAppAgent()
 
 
 
@@ -110,6 +112,9 @@ class ManagerAgent:
             "asks to create/draw/generate an image or picture), "
             "'translate' (translates text into another language — use when the user explicitly asks "
             "to translate something), "
+
+            "'whatsapp' (checks unread WhatsApp messages, reads a chat, or sends a message — use for "
+            "WhatsApp-related requests), "
 
             "'summarize' (condenses long text into key points — use when the user gives you text "
             "and asks to summarize, shorten, or condense it), "
@@ -184,6 +189,7 @@ class ManagerAgent:
             '["office"]\n'
             '["browser"]\n'
             '["browser"]\n'
+            '["whatsapp"]\n'
             
         )
         response = client.models.generate_content(
@@ -354,6 +360,11 @@ class ManagerAgent:
             elif step == "browser":
                 print("🌐 Browser agent is working...")
                 draft = self.browser.run(context_task)
+                print(f"Draft:\n{draft}\n")
+
+            elif step == "whatsapp":
+                print("💬 WhatsApp agent is working...")
+                draft = self.whatsapp.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
             elif step == "image":

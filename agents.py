@@ -5,6 +5,7 @@ from ddgs import DDGS
 from datetime import datetime
 from google.genai import types
 from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube, click_first_youtube_result
+from whatsapp_control import get_unread_chats, read_chat, send_whatsapp_message
 
 
 
@@ -572,6 +573,50 @@ class BrowserAgent(BaseAgent):
                 return "I couldn't figure out which browser action to take."
         except Exception as e:
             return f"Error performing browser action: {e}"
+
+
+
+class WhatsAppAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="WhatsApp",
+            role=(
+                "You control WhatsApp Web. Based on the request, decide which action to take: "
+                "get_unread_chats, read_chat, or send_whatsapp_message. "
+                "IMPORTANT: Never send a message unless the user has clearly asked you to send/reply "
+                "with specific content — if they just want to check messages, use get_unread_chats or "
+                "read_chat instead.\n"
+                'Reply with ONLY a JSON object like: {"action": "get_unread_chats", "params": {}}\n'
+                "Valid actions and params:\n"
+                '- get_unread_chats: {} (check who has sent new messages)\n'
+                '- read_chat: {"contact_name": "name of the contact"}\n'
+                '- send_whatsapp_message: {"contact_name": "name", "message": "exact text to send"}\n'
+                "Reply with ONLY the JSON, nothing else."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        import json
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=f"{self.role}\n\nUser request: {prompt}",
+        )
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        try:
+            decision = json.loads(raw)
+            action = decision.get("action")
+            params = decision.get("params", {})
+
+            if action == "get_unread_chats":
+                return get_unread_chats()
+            elif action == "read_chat":
+                return read_chat(**params)
+            elif action == "send_whatsapp_message":
+                return send_whatsapp_message(**params)
+            else:
+                return "I couldn't figure out which WhatsApp action to take."
+        except Exception as e:
+            return f"Error performing WhatsApp action: {e}"
 
 class OfficeAgent(BaseAgent):
     def __init__(self):
