@@ -190,6 +190,7 @@ class ManagerAgent:
             '["browser"]\n'
             '["browser"]\n'
             '["whatsapp"]\n'
+            '["whatsapp", "write"]\n'
             
         )
         response = client.models.generate_content(

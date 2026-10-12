@@ -14,7 +14,6 @@ from system_control import (
     open_notepad, create_folder, create_file, open_vscode, close_app,
     open_app, open_folder_in_explorer, search_web,
     create_word_doc, create_excel_sheet, create_powerpoint, open_file,
-    send_whatsapp_message
 )
 
 
@@ -581,6 +580,10 @@ class WhatsAppAgent(BaseAgent):
         super().__init__(
             name="WhatsApp",
             role=(
+                "If the user asks you to 'read and suggest a reply' or similar, first use read_chat to "
+                "get the messages, then in your final answer (after the JSON action result is returned), "
+                "suggest a short, appropriate reply based on the conversation context, and ask the user "
+                "if they'd like you to send it."
                 "You control WhatsApp Web. Based on the request, decide which action to take: "
                 "get_unread_chats, read_chat, or send_whatsapp_message. "
                 "IMPORTANT: Never send a message unless the user has clearly asked you to send/reply "

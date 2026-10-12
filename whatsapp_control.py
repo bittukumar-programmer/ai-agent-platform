@@ -31,7 +31,8 @@ def get_unread_chats() -> str:
     def _task():
         try:
             page = _get_page()
-            page.wait_for_selector('[data-testid="cell-frame-container"]', timeout=30000)
+            page.bring_to_front()  # make sure the window isn't minimized/backgrounded, which slows rendering
+            page.wait_for_selector('[data-testid="cell-frame-container"]', timeout=45000, state="attached")
             all_chats = page.locator('[data-testid="cell-frame-container"]')
             count = all_chats.count()
             unread_names = []
@@ -55,10 +56,16 @@ def read_chat(contact_name: str) -> str:
     def _task():
         try:
             page = _get_page()
-            page.get_by_text(contact_name, exact=False).first.click(timeout=8000)
-            page.wait_for_timeout(1000)
+            page.bring_to_front()
+            page.get_by_text(contact_name, exact=False).first.click(timeout=10000)
+            page.wait_for_timeout(2000)  # give the chat time to fully load messages
             messages = page.locator('.message-in, .message-out').all_inner_texts()
+            if not messages:
+                # Fallback: try a broader selector some WhatsApp Web versions use
+                messages = page.locator('[data-testid="msg-container"]').all_inner_texts()
             last_messages = messages[-5:] if messages else []
+            if not last_messages:
+                return f"Opened chat with {contact_name}, but couldn't read any messages."
             return f"Last messages with {contact_name}:\n" + "\n".join(last_messages)
         except Exception as e:
             return f"Error reading chat: {e}"
@@ -70,17 +77,32 @@ def send_whatsapp_message(contact_name: str, message: str) -> str:
     def _task():
         try:
             page = _get_page()
-            page.get_by_text(contact_name, exact=False).first.click(timeout=8000)
-            page.wait_for_timeout(500)
-            box = page.locator('[aria-label="Type a message"]')
-            box.click()
+            page.bring_to_front()
+            page.get_by_text(contact_name, exact=False).first.click(timeout=10000)
+            page.wait_for_timeout(1500)
+
+            # Try a few different selectors, since WhatsApp Web's structure changes over time
+            box = None
+            for selector in [
+                '[aria-label="Type a message"]',
+                'div[contenteditable="true"][data-tab="10"]',
+                'footer div[contenteditable="true"]',
+            ]:
+                candidate = page.locator(selector)
+                if candidate.count() > 0:
+                    box = candidate.first
+                    break
+
+            if box is None:
+                return "Error sending message: couldn't find the message input box."
+
+            box.click(timeout=8000)
             box.fill(message)
             box.press("Enter")
             return f"Sent to {contact_name}: '{message}'"
         except Exception as e:
             return f"Error sending message: {e}"
     return _run(_task)
-
 
 def debug_dump_chat_list() -> str:
     """Diagnostic: dumps the aria-labels of the first few chat list items, to help fix selectors."""
