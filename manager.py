@@ -263,11 +263,12 @@ class ManagerAgent:
                 writer_input = f"Topic: {context_task}"
                 if research:
                     writer_input += f"\nFacts:\n{research}"
+                if draft:  # carry forward whatever the previous step (e.g. whatsapp) already found
+                    writer_input += f"\nContext from previous step:\n{draft}"
                 if image is not None:
                     draft = self.writer.run_with_image(writer_input, image)
                 else:
                     draft = self.writer.run(writer_input)
-
 
             elif step == "code":
 
