@@ -9,6 +9,7 @@ from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
+from aura_profile import profile_as_text
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -71,21 +72,33 @@ run_agent_task_tool = {
     }]
 }
 
-CONFIG = types.LiveConnectConfig(
-    response_modalities=["AUDIO"],
-    speech_config=types.SpeechConfig(
-        voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore"))
-    ),
-    tools=[run_agent_task_tool],
-    input_audio_transcription={},
-    output_audio_transcription={},
-    system_instruction=(
-        "You are AURA, a personal AI assistant speaking to your user, Bittu. Always address him as 'Sir'. "
-        "Be natural, warm, and conversational, like Jarvis from Iron Man. Keep responses concise. "
-        "For simple conversation, answer directly. For anything requiring real action or lookup, call "
-        "the run_agent_task tool."
-    ),
-)
+def build_config():
+    """Builds the Live session config fresh each time, injecting recent memory so AURA remembers past talks."""
+    from memory_store import get_recent_memories
+    recent = get_recent_memories(10)
+    memory_context = "\n\n".join(recent) if recent else "No previous conversations recorded yet."
+    profile_context = profile_as_text()
+
+    return types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore"))
+        ),
+        tools=[run_agent_task_tool],
+        input_audio_transcription={},
+        output_audio_transcription={},
+        system_instruction=(
+            "You are AURA, a personal AI assistant speaking to your user, Bittu. Always address him as 'Sir'. "
+            "Be natural, warm, and conversational, like Jarvis from Iron Man. Keep responses concise. "
+            "For simple conversation, answer directly. For anything requiring real action or lookup, call "
+            "the run_agent_task tool.\n\n"
+            f"Here is what you know about him permanently (his profile):\n{profile_context}\n\n"
+            f"Here is a summary of your recent past conversations with him, for context and continuity:\n"
+            f"{memory_context}\n\n"
+            "If he asks what you talked about before, or references something from earlier, use this "
+            "context to answer naturally — do not say this is your first conversation."
+        ),
+    )
 
 
 class LiveAura:
@@ -155,7 +168,7 @@ class LiveAura:
             await asyncio.to_thread(stream.write, data)
 
     async def run(self):
-        async with client.aio.live.connect(model=MODEL, config=CONFIG) as session:
+        async with client.aio.live.connect(model=MODEL, config=build_config()) as session:
             self.session = session
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(self.listen_mic())
