@@ -5,3 +5,4 @@ __pycache__/
 agent_memory.json
 memory_db/
 voice_profile.npy
+aura_profile.json
