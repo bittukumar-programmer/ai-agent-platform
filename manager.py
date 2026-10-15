@@ -25,6 +25,7 @@ client = genai.Client(api_key=api_key)
 from agents import get_current_datetime, generate_image
 from agents import SystemAgent, OfficeAgent, BrowserAgent
 from agents import SystemAgent, OfficeAgent, BrowserAgent, WhatsAppAgent
+from agents import SystemAgent, OfficeAgent, BrowserAgent, WhatsAppAgent, SelfAwareAgent
 
 
 class ManagerAgent:
@@ -59,6 +60,8 @@ class ManagerAgent:
         self.office = OfficeAgent()
         self.browser = BrowserAgent()
         self.whatsapp = WhatsAppAgent()
+        self.current_focus = ""  # tracks what topic/entity the conversation is currently about
+        self.self_aware = SelfAwareAgent()
 
 
 
@@ -84,6 +87,8 @@ class ManagerAgent:
                 memory_text = "\n\n".join(relevant_memories)
                 parts.append(f"Relevant memories from past conversations:\n{memory_text}")
 
+        if self.current_focus:
+            parts.insert(0, f"Current conversation focus/topic: {self.current_focus}")
         return "\n\n".join(parts) if parts else "No previous conversation."
 
     def plan(self, task: str, has_image: bool = False) -> list:
@@ -112,6 +117,8 @@ class ManagerAgent:
             "asks to create/draw/generate an image or picture), "
             "'translate' (translates text into another language — use when the user explicitly asks "
             "to translate something), "
+            "'selfaware' (checks AURA's own system health, or reads its own code to look for bugs — "
+            "READ-ONLY, use when the user asks how AURA is doing, if something's broken, or to review code), "
 
             "'whatsapp' (checks unread WhatsApp messages, reads a chat, or sends a message — use for "
             "WhatsApp-related requests), "
@@ -191,6 +198,7 @@ class ManagerAgent:
             '["browser"]\n'
             '["whatsapp"]\n'
             '["whatsapp", "write"]\n'
+            '["selfaware"]\n'
             
         )
         response = client.models.generate_content(
@@ -369,6 +377,12 @@ class ManagerAgent:
                 draft = self.whatsapp.run(context_task)
                 print(f"Draft:\n{draft}\n")
 
+
+            elif step == "selfaware":
+                print("🩺 Self-awareness check is working...")
+                draft = self.self_aware.run(task)
+                print(f"Draft:\n{draft}\n")
+
             elif step == "image":
                 print("🎨 Generating image...")
                 generated_image = generate_image(task)
@@ -396,6 +410,14 @@ class ManagerAgent:
         # Save this turn to history for future context
         self.history.append({"task": task, "result": draft})
         save_memory(task, draft)
+                # Update the current focus so future agent calls understand "this/that" references
+        if draft:
+            focus_prompt = f"In 3-6 words, name the main topic/subject of this exchange:\nUser: {task}\nResponse: {draft[:200]}"
+            try:
+                focus_response = client.models.generate_content(model="gemini-flash-lite-latest", contents=focus_prompt)
+                self.current_focus = focus_response.text.strip()
+            except Exception:
+                pass
 
         return draft, generated_image
 

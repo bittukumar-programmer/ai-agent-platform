@@ -6,6 +6,7 @@ from datetime import datetime
 from google.genai import types
 from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube, click_first_youtube_result
 from whatsapp_control import get_unread_chats, read_chat, send_whatsapp_message
+from self_awareness import list_own_files, read_own_code, check_system_health
 
 
 
@@ -751,3 +752,68 @@ if __name__ == "__main__":
     coordinator = Coordinator()
     final = coordinator.run(topic)
     print(f"\n📝 Final Result:\n{final}")
+
+
+
+
+
+
+class SelfAwareAgent(BaseAgent):
+    def __init__(self):
+        super().__init__(
+            name="SelfAware",
+            role=(
+                "You can inspect AURA's own source code and system health, but you can NEVER modify, "
+                "write, or suggest direct edits to be auto-applied — you only observe and report. "
+                "Based on the request, decide the action: list_files, read_file, or health_check.\n"
+                'Reply with ONLY a JSON object like: {"action": "health_check", "params": {}}\n'
+                "Valid actions:\n"
+                '- list_files: {} (lists all of AURA\'s own source files)\n'
+                '- read_file: {"filename": "manager.py"} (reads one file to look for bugs or explain it)\n'
+                '- health_check: {} (checks if all subsystems — memory, webcam, WhatsApp, voice — are working)\n'
+                "Reply with ONLY the JSON, nothing else."
+            )
+        )
+
+    def run(self, prompt: str) -> str:
+        import json
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=f"{self.role}\n\nUser request: {prompt}",
+        )
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        try:
+            decision = json.loads(raw)
+            action = decision.get("action")
+            params = decision.get("params", {})
+
+            if action == "list_files":
+                files = list_own_files()
+                return "My source files: " + ", ".join(files)
+
+            elif action == "read_file":
+                code = read_own_code(params.get("filename", ""))
+                analysis_prompt = (
+                    f"Here is AURA's own source code from {params.get('filename')}:\n\n{code}\n\n"
+                    f"The user asked: {prompt}\n\n"
+                    f"Analyze it and answer naturally. If asked about bugs, point out anything "
+                    f"genuinely suspicious, but do NOT provide a fixed/rewritten version — just describe "
+                    f"the issue in words, since you cannot modify your own code."
+                )
+                result = client.models.generate_content(model="gemini-flash-lite-latest", contents=analysis_prompt)
+                return result.text
+
+            elif action == "health_check":
+                health = check_system_health()
+                report_prompt = (
+                    f"Here is AURA's current system health check results:\n{health}\n\n"
+                    f"Summarize this naturally and conversationally, like a person describing how they feel "
+                    f"physically. Mention anything that needs attention clearly."
+                )
+                result = client.models.generate_content(model="gemini-flash-lite-latest", contents=report_prompt)
+                return result.text
+
+            else:
+                return "I couldn't understand what to check."
+        except Exception as e:
+            return f"Error during self-check: {e}"

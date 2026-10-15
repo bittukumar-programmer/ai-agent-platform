@@ -10,6 +10,8 @@ from google.genai import types
 import os
 from dotenv import load_dotenv
 from aura_profile import profile_as_text
+from presence import watch_for_presence
+import threading as _threading
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -108,6 +110,17 @@ class LiveAura:
         self.session = None
         self.aura_speaking = False  # tracks whether AURA is currently talking
 
+
+    async def periodic_proactive_check(self):
+        """Every 15 minutes during an active session, checks if AURA should proactively say something."""
+        while True:
+            await asyncio.sleep(15 * 60)  # 15 minutes
+            msg = await asyncio.to_thread(manager.proactive_check)
+            if msg:
+                ui_log("AURA", f"[Proactive] {msg}")
+                from voice_manager import speak as offline_speak
+                await asyncio.to_thread(offline_speak, msg)
+
     async def listen_mic(self):
         mic_info = pya.get_default_input_device_info()
         stream = await asyncio.to_thread(
@@ -175,6 +188,21 @@ class LiveAura:
                 tg.create_task(self.send_audio())
                 tg.create_task(self.receive_audio())
                 tg.create_task(self.play_audio())
+                tg.create_task(self.periodic_proactive_check())
+
+
+def on_presence_detected():
+    """Called automatically when you walk back into view of the camera."""
+    ui_log("SYSTEM", "Presence detected — greeting proactively.")
+    greeting_msg = manager.proactive_check() or "Welcome back, Sir. How can I help you?"
+    from voice_manager import speak as offline_speak
+    try:
+        offline_speak(greeting_msg)
+        ui_log("AURA", greeting_msg)
+    except Exception:
+        pass
+
+
 
 
 def backend_loop():
@@ -210,5 +238,6 @@ def start_app(win):
 
 
 if __name__ == "__main__":
+    _threading.Thread(target=watch_for_presence, args=(on_presence_detected,), daemon=True).start()
     w = webview.create_window("AURA", "dashboard/index.html", width=1400, height=850, background_color="#02050a")
     webview.start(start_app, w)
