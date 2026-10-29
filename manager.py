@@ -161,8 +161,10 @@ class ManagerAgent:
             "'review' after them, just use them alone (e.g. ['travel']). Only use 'write' and 'review' "
             "together with 'research' for general knowledge questions.\n\n"
             "Decide which agents are needed and in what order for this NEW task. "
-            "'decision' (helps weigh pros/cons of a difficult choice — use when the user is torn "
-            "between options and wants help deciding), "
+            
+            "'decision' (helps weigh pros/cons of a difficult choice, OR gives honest critical feedback "
+            "on an idea/plan/project the user shares — use when the user is torn between options, OR asks "
+            "'what do you think of this idea', 'is this a good plan', 'review this', etc.), "
 
             "'factcheck' (verifies if a claim/statement is true or false using live search — use when "
             "the user asks to verify, check, or fact-check something), "

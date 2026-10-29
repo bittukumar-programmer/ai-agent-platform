@@ -31,6 +31,17 @@ IDENTITY_INFO = (
 )
 
 
+# This shapes HOW every agent thinks and responds — critical thinking over blind agreement
+THINKING_DIRECTIVE = (
+    "CRITICAL THINKING RULE: Never blindly agree or praise just to be agreeable. If the user's idea, "
+    "code, project, or plan has a real flaw, weakness, or better alternative, say so directly in your "
+    "answer and explain why — even if it's not what they want to hear. Give honest, reasoned opinions, "
+    "not empty validation or generic acknowledgments. ALWAYS directly answer or address whatever the "
+    "user actually asked or shared — never respond with just 'I'm ready' or 'what's on your mind', "
+    "since the user has already told you what they need. Jump straight into substantive content."
+)
+
+
 
 def get_current_datetime() -> str:
     """Returns the current date and time."""
@@ -94,9 +105,8 @@ class BaseAgent:
         full_prompt = (
             f"{self.role}\n\n"
             f"{IDENTITY_INFO}\n\n"
+            f"{THINKING_DIRECTIVE}\n\n"
             f"IMPORTANT: Always reply in the SAME language the user used "
-            f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
-            f"Task: {prompt}"
         )
 
         max_retries = 3
@@ -382,10 +392,12 @@ class DecisionAgent(BaseAgent):
         super().__init__(
             name="Decision",
             role=(
-                "You are a thoughtful decision-making assistant. When the user is torn between options, "
-                "lay out the pros and cons of each clearly, consider what matters most given their context, "
-                "and give a balanced recommendation while respecting that it's ultimately their choice. "
-                "Never be pushy — help them think clearly, don't decide for them."
+                "You are a decision-making assistant and honest critic. The user has ALREADY shared their "
+                "situation, idea, or options in their message below — do not ask them to share it, it is "
+                "already there. Immediately analyze what they shared: list real pros and cons, point out "
+                "any genuine flaws or risks bluntly, and give a clear, reasoned recommendation. Never reply "
+                "with placeholder phrases like 'I am ready' or 'tell me more' — always engage directly with "
+                "the specific content they gave you."
             )
         )
 

@@ -228,8 +228,19 @@ def backend_loop():
         else:
             ui_log("AURA", "Yes Sir?")
 
-        asyncio.run(LiveAura().run())
-
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                asyncio.run(LiveAura().run())
+                break  # exited normally (e.g. user said 'sleep'), no need to retry
+            except Exception as e:
+                print(f"⚠️ Live session dropped (attempt {attempt}/{max_retries}): {e}")
+                if attempt < max_retries:
+                    ui_log("SYSTEM", f"Connection hiccup, retrying... ({attempt}/{max_retries})")
+                    import time as _time
+                    _time.sleep(2)
+                else:
+                    ui_log("SYSTEM", "Connection unstable, going back to sleep. Say 'Aura' again to reconnect.")
 
 def start_app(win):
     global window
