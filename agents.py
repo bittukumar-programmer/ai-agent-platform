@@ -7,7 +7,7 @@ from google.genai import types
 from browser_control import open_url, search_google, click_text, type_text, read_page_text, search_youtube, click_first_youtube_result
 from whatsapp_control import get_unread_chats, read_chat, send_whatsapp_message
 from self_awareness import list_own_files, read_own_code, check_system_health
-
+from aura_persona import PERSONA
 
 
 
@@ -104,11 +104,12 @@ class BaseAgent:
         """Sends a prompt to the model and returns the response. Retries on network errors."""
         full_prompt = (
             f"{self.role}\n\n"
+            f"{PERSONA}\n\n"
             f"{IDENTITY_INFO}\n\n"
-            f"{THINKING_DIRECTIVE}\n\n"
             f"IMPORTANT: Always reply in the SAME language the user used "
+            f"(English, Hindi, or Hinglish). Match their language exactly.\n\n"
+            f"Task: {prompt}"
         )
-
         max_retries = 3
         for attempt in range(1, max_retries + 1):
             try:

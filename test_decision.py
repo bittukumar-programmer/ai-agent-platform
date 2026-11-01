@@ -1,5 +1,5 @@
 from agents import DecisionAgent
 
 agent = DecisionAgent()
-result = agent.run("Mujhe ek business idea mila hai, main sabko free mein cheezein dunga aur profit ads se kamaunga, bina kisi plan ke. Ye idea kaisa hai?")
+result = agent.run("locally jo dukandar apna pr day fast food ka dukan lagata hai uske pass customer bahut rahta hai lakin wo manage nhi kr pata hai mai uske liye ek application banunga aur per month charge lunga kaisa hai idea")
 print(result)

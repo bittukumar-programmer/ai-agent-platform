@@ -162,9 +162,10 @@ class ManagerAgent:
             "together with 'research' for general knowledge questions.\n\n"
             "Decide which agents are needed and in what order for this NEW task. "
             
-            "'decision' (helps weigh pros/cons of a difficult choice, OR gives honest critical feedback "
-            "on an idea/plan/project the user shares — use when the user is torn between options, OR asks "
-            "'what do you think of this idea', 'is this a good plan', 'review this', etc.), "
+            "'decision' (gives honest critical feedback ONLY on an idea/plan the user has ALREADY shared "
+            "in their message — use when the user describes their own existing idea/plan and asks for "
+            "review, opinion, or is torn between stated options. Do NOT use this if the user is asking "
+            "YOU to generate/suggest/come up with a new idea — use 'creative' or 'write' for that instead), "
 
             "'factcheck' (verifies if a claim/statement is true or false using live search — use when "
             "the user asks to verify, check, or fact-check something), "
